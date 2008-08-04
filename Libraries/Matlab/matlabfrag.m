@@ -304,7 +304,8 @@ end
         % Test to see if it is on a logarithmic scale
         if strcmpi(get(handle,[jj,'scale']),'log') && AutoTickLabel
           % And all of the values are integers
-          if ~mod(str2double(ticklabels),1)
+          ticklabelcell = mat2cell(ticklabels,ones(1,size(ticklabels,1)),size(ticklabels,2));
+          if all(~isnan(str2double(ticklabelcell)))
           % If so, make the labels read 10^<TickLabel>
           ticklabels = strcat(ones(size(ticklabels,1),1)*'$10^{',ticklabels,...
             ones(size(ticklabels,1),1)*'}$');
