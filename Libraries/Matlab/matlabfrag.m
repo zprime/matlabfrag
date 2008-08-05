@@ -8,7 +8,7 @@
 %  FileName - A string containting the name of the output files.
 %  hfig (optional) - a figure handle to print. If omitted 'gcf' is used.
 %
-% v0.3.1 20-Dec-2007
+% v0.3.2 05-Aug-2008
 %
 % Copyright 2007,2008 Zebb Prime
 % Distributed under the GNU General Public License, see LICENSE.txt
