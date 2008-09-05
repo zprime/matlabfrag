@@ -1,24 +1,46 @@
-% function matlabfrag(FileName,hfig)
+% function matlabfrag(FileName,OPTIONS)
 %  Exports a matlab figure to an .eps file and a .tex file for use with
 %  psfrag in LaTeX.  It provides similar functionality to Laprint, but
 %  with an emphasis on making it more WYSIWYG, and respecting the handle
-%  options for any given text.
+%  options for any given text, such as fontsize, fontweight, fontangle,
+%  etc.
+%
+%  .tex file entries can be overridden by placing a string in the
+%  'UserData' field of the text handle, prefixed by 'matlabfrag:'.
+%
+%  For use in pdflatex, I recommend the pstool package.
 %
 % INPUTS
-%  FileName - A string containting the name of the output files.
-%  hfig (optional) - a figure handle to print. If omitted 'gcf' is used.
+%  FileName (Required) - A string containting the name of the output files.
+%  OPTIONS (Optional) - additional options are added in 'key' and 'value'
+%                       pairs
+%    Key           |   Value
+%    ----------------------------------------------------------------------
+%    'handle'      | Figure to create the .eps and .tex files from.
+%                  |  default is gcf (current figure handle)
+%    'epspad'      | [Left,Bottom,Right,Top] - Pad the eps figure by
+%                  | the number of points in the input vector. Default
+%                  | is [0,0,0,0].
 %
-% v0.3.2 05-Aug-2008
+% EXAMPLE
+% plot(1:10,rand(1,10));
+% set(gca,'FontSize',8);
+% title('badness $\phi$','interpreter','latex','fontweight','bold');
+% xlabel('1 to 10','userdata','matlabfrag:\macro');
+% ylabel('random','fontsize',14);
+% matlabfrag('RandPlot','epspad',[5,0,0,0]);
+%
+% v0.4 1-Sep-2008
 %
 % Copyright 2007,2008 Zebb Prime
 % Distributed under the GNU General Public License, see LICENSE.txt
 % or the text appended to the source.
 %
-% URL: http://www.mecheng.adelaide.edu.au/~zprime/matlablibs
+% Please report bugs to zebb.prime+matlabfrag@gmail.com
 %
-% See also newfig
+% Available from the Matlab File Exchange
 
-function matlabfrag(FileName,hfig)
+function matlabfrag(FileName,varargin)
 
 % Version information is taken from the above help information
 HelpText = help('matlabfrag');
@@ -34,16 +56,13 @@ REPLACEMENT_FORMAT = '[%03d]';
 REPLACEMENT_MAXLENGTH = 5;
 USERDATA_PREFIX = 'matlabfrag:';
 
-if ~isa(FileName,'char')
-  error('matlabfrag:FileNameError','FileName must be a string');
-end
-if nargin == 2
-  if ~strcmpi(get(hfig,'Type'),'figure')
-    error('matlabfrag:HandleTypeError','hfig must be a figure handle');
-  end
-else
-  hfig = gcf;
-end
+p = inputParser;
+p.FunctionName = 'matlabfrag';
+
+p.addRequired('FileName', @(x) ischar(x) );
+p.addOptional('handle', gcf, @(x) ishandle(x) && strcmpi(get(x,'Type'),'figure') );
+p.addOptional('epspad', [0,0,0,0], @(x) isnumeric(x) && (all(size(x) == [1 4])) );
+p.parse(FileName,varargin{:});
 
 Actions = {};
 UndoActions = {};
@@ -56,11 +75,11 @@ StringCounter = 0;
 PsfragCmds = {};
 
 % Set up the page size to be printed
-Units = get(hfig,'Units');
-set(hfig,'Units','centimeters');
-Pos = get(hfig,'Position');
-set(hfig,'Units',Units);
-SetUnsetProperties(hfig,'PaperUnits','centimeters',...
+Units = get(p.Results.handle,'Units');
+set(p.Results.handle,'Units','centimeters');
+Pos = get(p.Results.handle,'Position');
+set(p.Results.handle,'Units',Units);
+SetUnsetProperties(p.Results.handle,'PaperUnits','centimeters',...
   'PaperPosition',Pos);
 
 % Show all of the hidden handles
@@ -68,7 +87,7 @@ hidden = get(0,'showhiddenhandles');
 set(0,'showhiddenhandles','on');
 
 % Process the picture
-ProcessFigure(hfig);
+ProcessFigure(p.Results.handle);
 
 % Apply the actions resulting from the processing
 for ii=1:length(Actions)
@@ -77,6 +96,20 @@ end
 
 % Export the image to an eps file
 print('-depsc2','-loose',FileName);
+
+% Pad the eps if requested
+if any( p.Results.epspad )
+  fh = fopen([FileName,'.eps'],'r');
+  epsfile = fread(fh,inf,'uint8=>char').';
+  fclose(fh);
+  bb = regexpi(epsfile,'\%\%BoundingBox:\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)','tokens');
+  bb = str2double(bb{1});
+  epsfile = regexprep(epsfile,sprintf('%i(\\s+)%i(\\s+)%i(\\s+)%i',bb),...
+  sprintf('%i$1%i$2%i$3%i',bb+round(p.Results.epspad.*[-1,-1,1,1])));
+  fh = fopen([FileName,'.eps'],'w');
+  fwrite(fh,epsfile);
+  fclose(fh);
+end
 
 % Apply the undo action to restore the image to how
 %  was originally
@@ -347,11 +380,11 @@ end
             end
             ReplacementText = ReplacementString();
             % Put a label in the right place
-            hCA = get(hfig,'CurrentAxes');
-            set(hfig,'CurrentAxes',handle);
+            hCA = get(p.Results.handle,'CurrentAxes');
+            set(p.Results.handle,'CurrentAxes',handle);
             ht = text(LabelPos(1),LabelPos(2),LabelPos(3),ReplacementText,...
               'VerticalAlignment','bottom','HorizontalAlignment','left');
-            set(hfig,'CurrentAxes',hCA);
+            set(p.Results.handle,'CurrentAxes',hCA);
             % Create the replacement command
             AddPsfragCommand(LatexScale,ReplacementText,Alignment,FontSize,...
               tickcolour,FontAngle,FontWeight,FixedWidth,[jj,'scale']);
@@ -514,7 +547,7 @@ end
     cropped_string = string(I(1):I(length(I)));
   end
 
-end % of matlabfrag(FileName,hfig)
+end % of matlabfrag(FileName,p.Results.handle)
 
 % This program is free software: you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
