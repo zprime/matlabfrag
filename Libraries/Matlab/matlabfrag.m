@@ -232,6 +232,8 @@ catch
   if fid > 0
     fclose(fid);
   end
+  err = lasterror;
+  err.stack.line
   rethrow(lasterror);
 end
 % All done! Below are the sub-functions
