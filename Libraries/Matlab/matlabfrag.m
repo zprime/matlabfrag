@@ -30,9 +30,9 @@
 % ylabel('random','fontsize',14);
 % matlabfrag('RandPlot','epspad',[5,0,0,0]);
 %
-% v0.4 1-Sep-2008
+% v0.4.1 7-Apr-2009
 %
-% Copyright 2007,2008 Zebb Prime
+% Copyright 2007--2009 Zebb Prime
 % Distributed under the GNU General Public License, see LICENSE.txt
 % or the text appended to the source.
 %
@@ -324,11 +324,17 @@ end
       FontSize,Colour,FontAngle,FontWeight,FixedWidth,'text');
   end
 
-  % Processes the 'ticks' of an axis, then returns.
+  % Processes the position, position mode and 'ticks' of an axis, then returns.
   %  Don't do anything if it is a legend
   function ProcessTicks(handle)
+    % Return if nothing to do.
     if strcmpi(get(handle,'tag'),'legend'); return; end;
     if strcmpi(get(handle,'visible'),'off'); return; end;
+    % Make sure figure doesn't resize itself while we are messing with it.
+    SetUnsetProperties(handle,'OuterPosition', get(handle,'OuterPosition') );
+    SetUnsetProperties(handle,'ActivePositionProperty','Position');
+    SetUnsetProperties(handle,'Position', get(handle,'Position') );
+    % Extract common options.
     [FontSize,FontAngle,FontWeight,FixedWidth] = CommonOptions(handle);
     for jj = ['x' 'y' 'z']
       AutoTick = strcmpi(get(handle,[jj,'tickmode']),'auto');
