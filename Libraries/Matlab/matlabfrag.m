@@ -30,7 +30,7 @@
 % ylabel('random','fontsize',14);
 % matlabfrag('RandPlot','epspad',[5,0,0,0]);
 %
-% v0.4.3 01-Jun-2009
+% v0.4.4 02-Jun-2009
 %
 % Please report bugs to zebb.prime+matlabfrag@gmail.com
 %
@@ -96,10 +96,11 @@ if ~isempty(pathstr)
   if ~exist(['./',pathstr],'dir')
     mkdir(pathstr);
   end
+  % Tidy up the FileName
+  FileName = [pathstr,filesep,namestr];
+else
+  FileName = namestr;
 end
-
-% Tidy up the FileName
-FileName = [pathstr,filesep,namestr];
 
 % Export the image to an eps file
 print('-depsc2','-loose',FileName);
