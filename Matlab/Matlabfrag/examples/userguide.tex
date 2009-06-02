@@ -2,7 +2,7 @@
 
 \usepackage[T1]{fontenc}\usepackage{lmodern}\usepackage[sc]{mathpazo}\linespread{1.1}% Palatino font
 \usepackage[colorlinks,urlcolor=black,linkcolor=black]{hyperref}
-\usepackage{upquote,fancyvrb,subfig}
+\usepackage{upquote,fancyvrb,subfig,microtype,sistyle,refstyle}
 \usepackage[process=auto,crop=preview]{pstool}
 
 \newcommand\matlabfrag{\href{http://www.mathworks.com/matlabcentral/fileexchange/21286}{{\tt matlabfrag}}}
@@ -52,15 +52,17 @@ matlabfrag(FileName,OPTIONS)
       \begin{itemize}
         \item[{\'handle'}] The handle for the figure to export. The default is \texttt{gcf} (`get 
 		  current figure').
-        \item[{\'epspad'}] The number of points to pad the output eps file by. The default is \texttt{[0,0,0,0]}.
+        \item[{\'epspad'}] The number of points to pad the output \eps\ file by. The default is \texttt{[0,0,0,0]}.
       \end{itemize}
-      Example
-      \VerbatimInput[firstline=7]{ex01.m}
+      Example\nobreak
+      \VerbatimInput[firstline=7,lastline=12]{ex01.m}
+      See \Figref{ex01} for the output.
       \begin{figure}[ht]
         \centering
         \subfloat[graphics/ex01-1]{\fbox{\psfragfig{graphics/ex01-1}}}\quad
         \subfloat[graphics/ex01-2]{\fbox{\psfragfig{graphics/ex01-2}}}
-        \caption{Example graphics showing the \texttt{epspad} option at work.}
+        \caption{\matlabfrag\ options example showing the \texttt{epspad} option at work.}
+        \figlabel{ex01}
       \end{figure}
       
       If you wish to show something different in \matlab\ and in the \tex\ document, then you
@@ -68,12 +70,13 @@ matlabfrag(FileName,OPTIONS)
       especially useful if you have macros in LaTeX which you want to use, or if you want to use some
       commands not included in the \matlab\ LaTeX installation. In this example, the \verb|\LaTeX| macro
       typesets LaTeX as \LaTeX.
-      \VerbatimInput[firstline=7]{ex02.m}
-
+      \VerbatimInput[firstline=7,lastline=11]{ex02.m}
+      See \Figref{ex02} for the output.
       \begin{figure}[ht]
         \centering
         \psfragfig{graphics/ex02}
-        \caption{X-label should say `Plays nice with \LaTeX'.}
+        \caption{UserData example; X-label should say `Plays nice with \LaTeX'.}
+        \figlabel{ex02}
       \end{figure}
       
     \subsection{Within LaTeX}%
@@ -132,32 +135,38 @@ matlabfrag(FileName,OPTIONS)
       I suggest that the first thing you do when creating a figure is setting it to the size that you want
       in the final document. This way the figure does not need to be resized at any stage, which prevents
       line sizes changing, text over-running borders, etc.  This can be done within \matlab\ using:
-      \VerbatimInput[firstline=4,lastline=9]{ex03.m}
+      \VerbatimInput[firstline=4,lastline=10]{ex03.m}
+      See \Figref{ex03} for the output.
       \begin{figure}[ht]
         \centering
         \psfragfig{graphics/ex03}
-        \caption{Figure sized to 8cm by 3cm.}
+        \caption{Resizing example; the figure is sized to \SI{8}{cm} by \SI{3}{cm}.}
+        \figlabel{ex03}
       \end{figure}
       
     \subsection{{\tt Color}}%
       The {\tt color} property is a three element vector representing the RGB colour of the text.
       \matlabfrag\ will respect the colour set in \matlab, but may require that you load the {\tt color}
       package in LaTeX (\pstoolname\ implicitly loads the {\tt color} package).
-      \VerbatimInput[firstline=8,lastline=11]{ex04.m}
+      \VerbatimInput[firstline=7,lastline=11]{ex04.m}
+      See \Figref{ex04} for the output.
       \begin{figure}[ht]
         \centering
         \psfragfig{graphics/ex04}
-        \caption{Text should be coloured.}
+        \caption{{\tt Color} example; the text should be coloured.}
+        \figlabel{ex04}
       \end{figure}
     
     \subsection{{\tt FontSize}}%
       All text in \matlab\ figures has a {\tt FontSize} property which \matlabfrag\ respects; the size
       specified in the figure is the size it will be in the LaTeX output document.
-      \VerbatimInput[firstline=8,lastline=11]{ex05.m}
+      \VerbatimInput[firstline=7,lastline=11]{ex05.m}
+      See \Figref{ex05} for the output.
       \begin{figure}[ht]
         \centering
         \psfragfig{graphics/ex05}
-        \caption{Text should be different sizes.}
+        \caption{{\tt FontSize} example; the text should be different sizes.}
+        \figlabel{ex05}
       \end{figure}
 
       
@@ -165,23 +174,27 @@ matlabfrag(FileName,OPTIONS)
       {\tt FontAngle} is a property shared by all text in a \matlab\ figure. \matlabfrag\ respects
       {\tt FontAngle} in that {\tt italic} and {\tt oblique} will be italic in the LaTeX output
       document.
-      \VerbatimInput[firstline=8,lastline=11]{ex06.m}
+      \VerbatimInput[firstline=7,lastline=11]{ex06.m}
+      See \Figref{ex06} for the output.
       \begin{figure}[ht]
         \centering
         \psfragfig{graphics/ex06}
-        \caption{Oblique and Italic font should both be italic here.}
+        \caption{{\tt FontAngle} example; Oblique and Italic font should both be italic here.}
+        \figlabel{ex06}
       \end{figure}
       
     \subsection{{\tt FontWeight}}%
       Another text property from \matlab\ figures that \matlabfrag\ respects is {\tt FontWeight}, such
       that any text set to {\tt bold} will be made bold in the output LaTeX document. {\tt light},
       {\tt demi} and {\tt normal} have no effect on the font in the LaTeX output.
-      \VerbatimInput[firstline=8,lastline=12]{ex07.m}
+      \VerbatimInput[firstline=7,lastline=12]{ex07.m}
+      See \Figref{ex07} for the output.
       \begin{figure}[ht]
         \centering
         \psfragfig{graphics/ex07}
-        \caption{Bold should be bold, demi and light do not really translate to LaTeX, so they should
-          default to normal.}
+        \caption{{\tt FontWeight} example; bold should be bold, demi and light do not really translate to
+        LaTeX, so they should default to normal.}
+        \figlabel{ex07}
       \end{figure}
             
     \subsection{{\tt FontName}}%
@@ -190,25 +203,32 @@ matlabfrag(FileName,OPTIONS)
       that of the text, so it does not make sense to use this property, except when it has been set to
       {\tt FixedWidth}, in which case the font in the output LaTeX document will be fixed-width (i.e.,
       \verb|\ttfamily|).
-      \VerbatimInput[firstline=8,lastline=11]{ex08.m}
+      \VerbatimInput[firstline=7,lastline=11]{ex08.m}
+      See \Figref{ex08} for the output.
       \begin{figure}[ht]
         \centering
         \psfragfig{graphics/ex08}
-        \caption{Fixed-width should be in a fixed-width font, while Comic Sans should be changed to the
-        font of the document.}
+        \caption{{\tt FontName} example; fixed-width should be in a typewriter font, while Comic Sans should
+        be changed to the font of the document.}
+        \figlabel{ex08}
       \end{figure}
       
     \subsection{{\tt Interpreter}}%
       \matlab\ has three (well, two really) text interpreters that is uses to render the text. These
       are {\tt tex}, {\tt latex} and {\tt none}. I generally don't recommend the use of the default
-      {\tt tex} interpreter if rendering anything mathematical and using \matlabfrag. The {\tt latex}
-      interpreter is especially useful for rendering mathematical formula.
-      \VerbatimInput[firstline=8,lastline=11]{ex09.m}
-	  \begin{figure}[ht]
-	    \centering
-		\psfragfig{graphics/ex09}
-		\caption{Both equations should be the same, despite using a different interpreter in \matlab.}
-	  \end{figure}
+      {\tt tex} interpreter if rendering anything mathematical and using \matlabfrag, as while the {\tt tex}
+      interpreter may render a mathematical expression fine, it may not work in LaTeX.
+      
+      The {\tt latex} interpreter is especially useful for rendering mathematical formula.
+      \VerbatimInput[firstline=7,lastline=11]{ex09.m}
+      See \Figref{ex09} for the output.
+	    \begin{figure}[ht]
+	      \centering
+		  \psfragfig{graphics/ex09}
+		  \caption{{\tt Interpreter} example; both equations should be the same, despite using a different
+		    interpreter in \matlab.}
+		  \figlabel{ex09}
+	    \end{figure}
       
     \subsection{Multi-line text}%
       Multi-line text can be entered into \matlab\ using either a cell or a two-dimensional character
@@ -218,11 +238,13 @@ matlabfrag(FileName,OPTIONS)
       \matlabfrag\ recreates multi-line text using a {\tt tabular} environment. If you also use the
       {\tt UserData} property, you will need to manually put the {\tt tabular} environment in, as
       \matlabfrag\ will ignore any {\tt UserData} that is not a string.
-	  \VerbatimInput[firstline=8,lastline=13]{ex10.m}
+	    \VerbatimInput[firstline=7,lastline=13]{ex10.m}
+	    See \Figref{ex10} for the output.
 	  \begin{figure}[ht]
 	    \centering
-		\psfragfig{graphics/ex10}
-		\caption{Three different ways to make multiline text. 2D arrays, cells and using {\tt tabular}.}
+		  \psfragfig{graphics/ex10}
+		  \caption{Multi-line example; three different ways to make multi-line text. 2D arrays, cells and using {\tt tabular}.}
+		  \figlabel{ex10}
 	  \end{figure}
 	  
   \section{Frequently (occasionally) asked questions}%
@@ -235,7 +257,7 @@ matlabfrag(FileName,OPTIONS)
 	  \subsection*{Why doesn't the \tex\ file have the {\tt includegraphics} statement in it like
 	  LaPrint does?}
 	
-	  \par\noindent Firstly, read the Background section above. With all the image files stored in a
+	  Firstly, read the Background section above. With all the image files stored in a
 	  {\tt graphics} subdirectory of the main document, I would have to manually open the \tex\ file and
 	  insert the path into the that line. This was one of the reasons I wrote \matlabfrag\ in the first
 	  place.
@@ -248,10 +270,10 @@ matlabfrag(FileName,OPTIONS)
     \section{Troubleshooting}	
 	  \begin{enumerate}
 	    \item Check that all LaTeX statements in your figure are valid. If you are having problems, try a
-	      simple example that is know to work.
+	      simple example that is known to work.
 	    \item If using pdfLaTeX and \pstoolname, check:
 	    \begin{enumerate}
-	      \item \verb|-shell-escape| option is set calling pdfLaTeX.
+	      \item \verb|-shell-escape| option is set when calling pdfLaTeX.
 	    \end{enumerate}
 	    \item If using LaTeX and \pstoolname, check:
 	    \begin{enumerate}
@@ -267,6 +289,8 @@ matlabfrag(FileName,OPTIONS)
 	      \item Learn how to use LaTeX!
 	    \end{enumerate}
 	    \item Shut up and reboot!
+	    \item Perhaps you have found a bug. If so, please email the smallest self-contained example that
+	      reproduces the bug to me at\par\noindent{\tt zebb.prime+matlabfrag@gmail.com}
 	  \end{enumerate}
   
 \end{document}

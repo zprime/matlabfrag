@@ -3,6 +3,7 @@
 %% Everything below appears in userguide
 hfig = figure;
 plot(rand(2));
+axis([1 2 0 1]);
 set(hfig,'units','centimeters',...
   'NumberTitle','off','Name','ex03');
 pos = get(hfig,'position');
