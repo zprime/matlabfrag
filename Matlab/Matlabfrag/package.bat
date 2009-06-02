@@ -1,1 +1,1 @@
-"C:\Program Files\7-Zip\7z.exe" u matlabfrag.zip Example.m ..\..\Libraries\Matlab\matlabfrag.m
+"C:\Program Files\7-Zip\7z.exe" u matlabfrag.zip userguide.pdf ..\..\Libraries\Matlab\matlabfrag.m examples\

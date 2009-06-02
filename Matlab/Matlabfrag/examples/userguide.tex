@@ -1,0 +1,272 @@
+\documentclass[a4paper,11pt]{article}
+
+\usepackage[T1]{fontenc}\usepackage{lmodern}\usepackage[sc]{mathpazo}\linespread{1.1}% Palatino font
+\usepackage[colorlinks,urlcolor=black,linkcolor=black]{hyperref}
+\usepackage{upquote,fancyvrb,subfig}
+\usepackage[process=auto,crop=preview]{pstool}
+
+\newcommand\matlabfrag{\href{http://www.mathworks.com/matlabcentral/fileexchange/21286}{{\tt matlabfrag}}}
+\newcommand\psfragname{\href{http://www.ctan.org/tex-archive/help/Catalogue/entries/psfrag.html}{{\tt psfrag}}}
+\newcommand\pstoolname{\href{http://www.ctan.org/tex-archive/help/Catalogue/entries/pstool.html}{{\tt pstool}}}
+\newcommand\matlab{{\sc Matlab}}
+\newcommand\tex{{\sc .tex}}
+\newcommand\eps{{\sc .eps}}
+\def\'#1'{\texttt{\textquotesingle #1\textquotesingle}}
+
+\title{\matlabfrag\ user guide}
+\author{Zebb Prime}
+
+\begin{document}
+  \maketitle
+  \tableofcontents
+  \section{Introduction}%
+    \matlabfrag\ is a function which exports a \matlab\ figure to \eps\ and \tex\ files for use in LaTeX
+    with \psfragname. It is inspired by LaPrint, but is intended to be more WYSIWYG, by respecting figure
+    handles better. The main reasons to use \matlabfrag\ are the same as those for using \psfragname: figure
+    font matching that of the document, and the ability to have complex mathematical expressions typeset
+    by LaTeX.
+ 
+  \section{Background}%
+    I wrote \matlabfrag\ after becoming frustrated with the default LaPrint behaviour, including it
+    putting the line to insert the graphic in the output \tex\ file: \verb|\includegraphics{FileName.eps}|
+    
+    Whilst these problems could be addressed using one of the many options in LaPrint, I decided to
+    take a stand against the many \matlab\ scripts and functions available which try to impose their
+    own sense of style on my figures, and instead write a function which does everything possible to
+    respect the figure handles. Everyone has their own sense of style, for better or worse, and I'm sure
+    most users have their own little scripts set up to format their figures in their own way.
+        
+    The problem I have with the \verb|\includegraphics{FileName.eps}| line in the \tex\
+    file is that I keep my figures in a {\tt graphics} subdirectory of my main document. This meant I had to
+    manually edit the \tex\ file every time I exported the figure from \matlab.
+    
+  \section{Usage}%
+    \subsection{Within \matlab}%
+      Using \matlabfrag\ within \matlab\ is easy. Simply format the figure how you like it, then run
+      \matlabfrag. The format for the \matlabfrag\ command is:
+      \begin{verbatim}
+matlabfrag(FileName,OPTIONS)
+      \end{verbatim}
+      where {\tt FileName} (required) is the file name for the output \tex\ and \eps\ files, and 
+      {\tt OPTIONS} are key-value pairs for the optional options:
+      \begin{itemize}
+        \item[{\'handle'}] The handle for the figure to export. The default is \texttt{gcf} (`get 
+		  current figure').
+        \item[{\'epspad'}] The number of points to pad the output eps file by. The default is \texttt{[0,0,0,0]}.
+      \end{itemize}
+      Example
+      \VerbatimInput[firstline=7]{ex01.m}
+      \begin{figure}[ht]
+        \centering
+        \subfloat[graphics/ex01-1]{\fbox{\psfragfig{graphics/ex01-1}}}\quad
+        \subfloat[graphics/ex01-2]{\fbox{\psfragfig{graphics/ex01-2}}}
+        \caption{Example graphics showing the \texttt{epspad} option at work.}
+      \end{figure}
+      
+      If you wish to show something different in \matlab\ and in the \tex\ document, then you
+      can add it into the {\tt UserData} property of the text, with a {\tt matlabfrag:} prefix. This is
+      especially useful if you have macros in LaTeX which you want to use, or if you want to use some
+      commands not included in the \matlab\ LaTeX installation. In this example, the \verb|\LaTeX| macro
+      typesets LaTeX as \LaTeX.
+      \VerbatimInput[firstline=7]{ex02.m}
+
+      \begin{figure}[ht]
+        \centering
+        \psfragfig{graphics/ex02}
+        \caption{X-label should say `Plays nice with \LaTeX'.}
+      \end{figure}
+      
+    \subsection{Within LaTeX}%
+      The \tex\ and \eps\ files can be included in a LaTeX document (pdfLaTeX is treated seperately below)
+      by either loading the \psfragname\ package and including the \tex\ file before the \eps\ file:
+      \begin{verbatim}
+\documentclass{article}
+\usepackage{graphicx,psfrag}
+\begin{document}
+  \include{FileName.tex}
+  \includegraphics{FileName.eps}
+\end{document}
+      \end{verbatim}
+      or my preferred method; loading the \pstoolname\ package (v1.2 onwards), and using the
+      \verb|\psfragfig| macro:
+      \begin{verbatim}
+\documentclass{article}
+\usepackage{pstool}
+\begin{document}
+  \psfragfig{FileName}
+\end{document}
+      \end{verbatim}
+      Notice the lack of a file extension in the \verb|\psfragfig| macro. This is a requirement of \pstoolname.
+      \pstoolname\ also loads the {\tt graphicx}, {\tt psfrag} and {\tt color} packages (as well as a few others),
+      so it is not necessary to explicitly load these packages.
+      
+      For more information about \pstoolname\ or \psfragname\ please see their respective manuals.
+      
+    \subsection{Within pdfLaTeX}%
+      There are several ways to include files with postscript commands (such as \psfragname) in pdfLaTeX such
+      as {\tt pst-pdf}, {\tt auto-pst-pdf}, {\tt ps4pdf} and \pstoolname, by far the most useful of which is
+      \pstoolname.  The document is set up the same way as the LaTeX example above:
+      \begin{verbatim}
+\documentclass{article}
+\usepackage{pstool}
+\begin{document}
+  \psfragfig{FileName}
+\end{document}
+      \end{verbatim}
+      The only difference being that \pstoolname\ runs some external processes to run the postscript commands,
+      and as such it needs the \verb|-shell-escape| command when being called:\par
+{\verb|pdflatex -shell-escape example.tex|}\par\noindent
+      where {\tt example.tex} is the code above.
+      
+    \subsection{Within LyX}%
+      If you are using LyX, you have to ensure \pstoolname\ is installed in your LaTeX distribution, then load
+      the \pstoolname\ package by putting \verb|\usepackage{pstool}| in the preamble, enable
+      \verb|-shell-escape| for when pdfLaTeX is executed, and include the figure using \verb|\psfragfig|
+      as above in a \verb|ERT| box.
+      
+  \section{Creating figures in \matlab}%
+    Hypocritically I am now going to suggest a few ways to manipulate figures in \matlab\ before exporting
+    them using \matlabfrag.
+    
+    \subsection{Sizing}%
+      I suggest that the first thing you do when creating a figure is setting it to the size that you want
+      in the final document. This way the figure does not need to be resized at any stage, which prevents
+      line sizes changing, text over-running borders, etc.  This can be done within \matlab\ using:
+      \VerbatimInput[firstline=4,lastline=9]{ex03.m}
+      \begin{figure}[ht]
+        \centering
+        \psfragfig{graphics/ex03}
+        \caption{Figure sized to 8cm by 3cm.}
+      \end{figure}
+      
+    \subsection{{\tt Color}}%
+      The {\tt color} property is a three element vector representing the RGB colour of the text.
+      \matlabfrag\ will respect the colour set in \matlab, but may require that you load the {\tt color}
+      package in LaTeX (\pstoolname\ implicitly loads the {\tt color} package).
+      \VerbatimInput[firstline=8,lastline=11]{ex04.m}
+      \begin{figure}[ht]
+        \centering
+        \psfragfig{graphics/ex04}
+        \caption{Text should be coloured.}
+      \end{figure}
+    
+    \subsection{{\tt FontSize}}%
+      All text in \matlab\ figures has a {\tt FontSize} property which \matlabfrag\ respects; the size
+      specified in the figure is the size it will be in the LaTeX output document.
+      \VerbatimInput[firstline=8,lastline=11]{ex05.m}
+      \begin{figure}[ht]
+        \centering
+        \psfragfig{graphics/ex05}
+        \caption{Text should be different sizes.}
+      \end{figure}
+
+      
+    \subsection{{\tt FontAngle}}%
+      {\tt FontAngle} is a property shared by all text in a \matlab\ figure. \matlabfrag\ respects
+      {\tt FontAngle} in that {\tt italic} and {\tt oblique} will be italic in the LaTeX output
+      document.
+      \VerbatimInput[firstline=8,lastline=11]{ex06.m}
+      \begin{figure}[ht]
+        \centering
+        \psfragfig{graphics/ex06}
+        \caption{Oblique and Italic font should both be italic here.}
+      \end{figure}
+      
+    \subsection{{\tt FontWeight}}%
+      Another text property from \matlab\ figures that \matlabfrag\ respects is {\tt FontWeight}, such
+      that any text set to {\tt bold} will be made bold in the output LaTeX document. {\tt light},
+      {\tt demi} and {\tt normal} have no effect on the font in the LaTeX output.
+      \VerbatimInput[firstline=8,lastline=12]{ex07.m}
+      \begin{figure}[ht]
+        \centering
+        \psfragfig{graphics/ex07}
+        \caption{Bold should be bold, demi and light do not really translate to LaTeX, so they should
+          default to normal.}
+      \end{figure}
+            
+    \subsection{{\tt FontName}}%
+      {\tt FontName} is a property that \matlabfrag\ \emph{does not} respect, with one exception. One
+      of the basic ideas behind using \matlabfrag\ and \psfragname\ is to match the font in figures to
+      that of the text, so it does not make sense to use this property, except when it has been set to
+      {\tt FixedWidth}, in which case the font in the output LaTeX document will be fixed-width (i.e.,
+      \verb|\ttfamily|).
+      \VerbatimInput[firstline=8,lastline=11]{ex08.m}
+      \begin{figure}[ht]
+        \centering
+        \psfragfig{graphics/ex08}
+        \caption{Fixed-width should be in a fixed-width font, while Comic Sans should be changed to the
+        font of the document.}
+      \end{figure}
+      
+    \subsection{{\tt Interpreter}}%
+      \matlab\ has three (well, two really) text interpreters that is uses to render the text. These
+      are {\tt tex}, {\tt latex} and {\tt none}. I generally don't recommend the use of the default
+      {\tt tex} interpreter if rendering anything mathematical and using \matlabfrag. The {\tt latex}
+      interpreter is especially useful for rendering mathematical formula.
+      \VerbatimInput[firstline=8,lastline=11]{ex09.m}
+	  \begin{figure}[ht]
+	    \centering
+		\psfragfig{graphics/ex09}
+		\caption{Both equations should be the same, despite using a different interpreter in \matlab.}
+	  \end{figure}
+      
+    \subsection{Multi-line text}%
+      Multi-line text can be entered into \matlab\ using either a cell or a two-dimensional character
+      matrix. If using a character matrix, \matlabfrag\ preserves all of the white spaces, so if you
+      do not wish for this to occur, use cells instead (or check out the {\tt cellstr} function).
+      
+      \matlabfrag\ recreates multi-line text using a {\tt tabular} environment. If you also use the
+      {\tt UserData} property, you will need to manually put the {\tt tabular} environment in, as
+      \matlabfrag\ will ignore any {\tt UserData} that is not a string.
+	  \VerbatimInput[firstline=8,lastline=13]{ex10.m}
+	  \begin{figure}[ht]
+	    \centering
+		\psfragfig{graphics/ex10}
+		\caption{Three different ways to make multiline text. 2D arrays, cells and using {\tt tabular}.}
+	  \end{figure}
+	  
+  \section{Frequently (occasionally) asked questions}%
+    \subsection*{Why does the output have [`number'] in it?}
+	
+	  Either you are looking at the \eps\ output and that is how it is supposed to look,
+	  or there was a problem processing the image with \psfragname. Check out the troubleshooting section
+	  below.
+	
+	  \subsection*{Why doesn't the \tex\ file have the {\tt includegraphics} statement in it like
+	  LaPrint does?}
+	
+	  \par\noindent Firstly, read the Background section above. With all the image files stored in a
+	  {\tt graphics} subdirectory of the main document, I would have to manually open the \tex\ file and
+	  insert the path into the that line. This was one of the reasons I wrote \matlabfrag\ in the first
+	  place.
+	
+	  I have considered including an option to produce this output for those who would rather use this
+	  behaviour than load \pstoolname\ but decided against it due to the directory problems. From v1.2 onwards
+	  \pstoolname\ works fine in LaTeX so there really is no need to manually put the \verb|\includegraphics|
+	  line in.
+	
+    \section{Troubleshooting}	
+	  \begin{enumerate}
+	    \item Check that all LaTeX statements in your figure are valid. If you are having problems, try a
+	      simple example that is know to work.
+	    \item If using pdfLaTeX and \pstoolname, check:
+	    \begin{enumerate}
+	      \item \verb|-shell-escape| option is set calling pdfLaTeX.
+	    \end{enumerate}
+	    \item If using LaTeX and \pstoolname, check:
+	    \begin{enumerate}
+	      \item \pstoolname\ is at least at version 1.2. An alternative location to finding \pstoolname\ is
+		    \url{http://github.com/wspr/pstool/}.
+	    \end{enumerate}
+	    \item If using LaTeX or pdfLaTeX with anything else:
+	    \begin{enumerate}
+	      \item Install \pstoolname !
+	    \end{enumerate}
+	    \item If using LyX:
+	    \begin{enumerate}
+	      \item Learn how to use LaTeX!
+	    \end{enumerate}
+	    \item Shut up and reboot!
+	  \end{enumerate}
+  
+\end{document}

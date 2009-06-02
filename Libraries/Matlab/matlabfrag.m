@@ -30,7 +30,7 @@
 % ylabel('random','fontsize',14);
 % matlabfrag('RandPlot','epspad',[5,0,0,0]);
 %
-% v0.4.2 20-May-2009
+% v0.4.3 01-Jun-2009
 %
 % Please report bugs to zebb.prime+matlabfrag@gmail.com
 %
@@ -90,6 +90,17 @@ for ii=1:length(Actions)
   Actions{ii}();
 end
 
+% Test to see if the directory (if specified) exists
+[pathstr,namestr] = fileparts(FileName);
+if ~isempty(pathstr)
+  if ~exist(['./',pathstr],'dir')
+    mkdir(pathstr);
+  end
+end
+
+% Tidy up the FileName
+FileName = [pathstr,filesep,namestr];
+
 % Export the image to an eps file
 print('-depsc2','-loose',FileName);
 
@@ -98,7 +109,7 @@ if any( p.Results.epspad )
   fh = fopen([FileName,'.eps'],'r');
   epsfile = fread(fh,inf,'uint8=>char').';
   fclose(fh);
-  bb = regexpi(epsfile,'\%\%BoundingBox:\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)','tokens');
+  bb = regexpi(epsfile,'\%\%BoundingBox:\s+(-*\d+)\s+(-*\d+)\s+(-*\d+)\s+(-*\d+)','tokens');
   bb = str2double(bb{1});
   epsfile = regexprep(epsfile,sprintf('%i(\\s+)%i(\\s+)%i(\\s+)%i',bb),...
   sprintf('%i$1%i$2%i$3%i',bb+round(p.Results.epspad.*[-1,-1,1,1])));
@@ -163,7 +174,7 @@ try
       NewFontStyle = 1;
     end
     % Test to see if the colour has changed
-    if ~(CurrentColour == PsfragCmds{ii,5})
+    if ~all(CurrentColour == PsfragCmds{ii,5})
       CurrentColour = PsfragCmds{ii,5};
       NewFontStyle = 1;
     end
@@ -251,23 +262,50 @@ end
   % Process a text handle, extracting the appropriate data
   %  and creating 'action' functions
   function ProcessText(handle)
-    % Test to see if the string and userdata are empty or
-    %  'visible' is set to off.
+    % Get some of the text properties.
     String = get(handle,'string');
     UserData = get(handle,'UserData');
     UserString = {};
+    % Test to see if the text is visible. If not, return.
     if strcmpi(get(handle,'visible'),'off'); return; end;
-    if isempty(sscanf(String,'%s')) 
-      if ischar(UserData)
-        if isempty(sscanf(UserData,'%s')); return; end
-        UserString = regexp(UserData,[USERDATA_PREFIX,'(.*)'],'tokens');
-      else return;
-      end
-    elseif ischar(UserData)
+    % Process the strings alignment options
+    [halign,valign] = GetAlignment(handle);
+    % Test to see if UserData is valid.
+    if ischar(UserData)
       if ~isempty(sscanf(UserData,'%s'))
         UserString = regexp(UserData,[USERDATA_PREFIX,'(.*)'],'tokens');
       end
     end
+    % Test for multiline strings (using cells).
+    if iscell(String)
+      % Error checking. Luckily Matlab is fairly nice with the way it
+      % treats is strings in figures.
+      assert( size(String,2) == 1 && iscellstr(String),...
+        'matlabfrag:WeirdError',['Weird ''String'' formatting.\n',...
+        'Please email the author, as this error should not occur.']);
+      % If the cell only has 1 element, then do nothing.
+      if size(String,1)==1
+        String = String{:};
+      else
+        temp = sprintf('\\begin{tabular}{@{}%c@{}}%s',halign,String{1});
+        for jj=2:length(String)
+          temp = sprintf('%s\\\\%s',temp,String{jj});
+        end
+        String = sprintf('%s\\end{tabular}',temp);
+      end
+    end
+    % Test for multiline strings using matrices
+    if size(String,1) > 1
+      temp = sprintf('\\begin{tabular}{@{}%c@{}}%s',halign,...
+        regexprep(String(1,:),' ','~'));
+        for jj=2:size(String,1)
+          temp = sprintf('%s\\\\%s',temp,...
+            regexprep(String(jj,:),' ','~'));
+        end
+        String = sprintf('%s\\end{tabular}',temp);
+    end
+    % If there is no text, return.
+    if isempty(sscanf(String,'%s')) && isempty(UserString); return; end;
     % Retrieve the common options
     [FontSize,FontAngle,FontWeight,FixedWidth] = CommonOptions(handle);
     % Assign a replacement action for the string
@@ -284,33 +322,7 @@ end
     % Make sure the final position is the same as the original one
     Pos = get(handle,'Position');
     AddAction( @() set(handle,'position',Pos) );
-    % Process the strings alignment options
-    HAlign = get(handle,'HorizontalAlignment');
-    switch HAlign
-      case 'left'
-        halign = 'l';
-      case 'right'
-        halign = 'r';
-      case 'center'
-        halign = 'c';
-      otherwise
-        warning('matlabfrag:UnknownHorizAlign',...
-          'Unknown text horizontal alignment for "%s", defaulting to left',String);
-        halign = 'l';
-    end
-    VAlign = get(handle,'VerticalAlignment');
-    switch VAlign
-      case {'base','bottom'}
-        valign = 'b';
-      case {'top','cap'}
-        valign = 't';
-      case {'middle'}
-        valign = 'c';
-      otherwise
-        warning('matlabfrag:UnknownVertAlign',...
-          'Unknown text vertical alignment for "%s", defaulting to bottom',String);
-        valign = 'l';
-    end
+    
     % Now set the horizontal alignment to 'bl'
     SetUnsetProperties(handle,'VerticalAlignment','bottom','HorizontalAlignment','left');
     % Get the text colour
@@ -549,6 +561,35 @@ end
     end
     I = regexp(string,'[^\s]');
     cropped_string = string(I(1):I(length(I)));
+  end
+
+  function [halign,valign] = GetAlignment(handle)
+    HAlign = get(handle,'HorizontalAlignment');
+    switch HAlign
+      case 'left'
+        halign = 'l';
+      case 'right'
+        halign = 'r';
+      case 'center'
+        halign = 'c';
+      otherwise
+        warning('matlabfrag:UnknownHorizAlign',...
+          'Unknown text horizontal alignment for "%s", defaulting to left',String);
+        halign = 'l';
+    end
+    VAlign = get(handle,'VerticalAlignment');
+    switch VAlign
+      case {'base','bottom'}
+        valign = 'b';
+      case {'top','cap'}
+        valign = 't';
+      case {'middle'}
+        valign = 'c';
+      otherwise
+        warning('matlabfrag:UnknownVertAlign',...
+          'Unknown text vertical alignment for "%s", defaulting to bottom',String);
+        valign = 'l';
+    end
   end
 
 end % of matlabfrag(FileName,p.Results.handle)
