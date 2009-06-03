@@ -5,6 +5,8 @@
 \usepackage{upquote,fancyvrb,subfig,microtype,sistyle,refstyle}
 \usepackage[process=auto,crop=preview]{pstool}
 
+\newcommand\ytick[1]{\ensuremath{\mathcal R(e^{#1 i})}}
+
 \newcommand\matlabfrag{\href{http://www.mathworks.com/matlabcentral/fileexchange/21286}{{\tt matlabfrag}}}
 \newcommand\psfragname{\href{http://www.ctan.org/tex-archive/help/Catalogue/entries/psfrag.html}{{\tt psfrag}}}
 \newcommand\pstoolname{\href{http://www.ctan.org/tex-archive/help/Catalogue/entries/pstool.html}{{\tt pstool}}}
@@ -240,12 +242,27 @@ matlabfrag(FileName,OPTIONS)
       \matlabfrag\ will ignore any {\tt UserData} that is not a string.
 	    \VerbatimInput[firstline=7,lastline=13]{ex10.m}
 	    See \Figref{ex10} for the output.
-	  \begin{figure}[ht]
-	    \centering
-		  \psfragfig{graphics/ex10}
-		  \caption{Multi-line example; three different ways to make multi-line text. 2D arrays, cells and using {\tt tabular}.}
-		  \figlabel{ex10}
-	  \end{figure}
+	    \begin{figure}[ht]
+	      \centering
+		    \psfragfig{graphics/ex10}
+		    \caption{Multi-line example; three different ways to make multi-line text. 2D arrays, cells
+		      and using {\tt tabular}.}
+		    \figlabel{ex10}
+	    \end{figure}
+	  
+	  \subsection{Custom tick labels}%
+	    Custom tick labels can be added directly as strings for LaTeX to interpret. In this example,
+	    the \verb|\ytick| macro has been defined in the preamble of this document as:
+      \par{\verb|\newcommand\ytick[1]{\ensuremath{\mathcal R(e^{#1 i})}}|}\par\noindent
+      The \matlab\ example code is:
+      \VerbatimInput[firstline=7,lastline=12]{ex11.m}
+      See \Figref{ex11} for the output.
+      \begin{figure}[ht]
+        \centering
+        \psfragfig{graphics/ex11}
+        \caption{Custom tick label example.}
+        \figlabel{ex11}
+      \end{figure}
 	  
   \section{Frequently (occasionally) asked questions}%
     \subsection*{Why does the output have [`number'] in it?}
