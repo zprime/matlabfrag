@@ -15,6 +15,16 @@
 \newcommand\eps{{\sc .eps}}
 \def\'#1'{\texttt{\textquotesingle #1\textquotesingle}}
 
+% Get rid of that stupid S thing in section references.
+\newref{sec}{%
+  name    = \RSsectxt,
+  names   = \RSsecstxt,
+  Name    = \RSSectxt,
+  Names   = \RSSecstxt,
+  refcmd  = {\ref{#1}},
+  rngtxt  = \RSrngtxt,
+  lsttxt  = \RSlsttxt}
+
 \title{\matlabfrag\ user guide}
 \author{Zebb Prime}
 
@@ -81,7 +91,7 @@ matlabfrag(FileName,OPTIONS)
         \figlabel{ex02}
       \end{figure}
       
-    \subsection{Within LaTeX}%
+    \subsection{Within LaTeX}\seclabel{in-latex}%
       The \tex\ and \eps\ files can be included in a LaTeX document (pdfLaTeX is treated seperately below)
       by either loading the \psfragname\ package and including the \tex\ file before the \eps\ file:
       \begin{verbatim}
@@ -107,6 +117,11 @@ matlabfrag(FileName,OPTIONS)
       
       For more information about \pstoolname\ or \psfragname\ please see their respective manuals.
       
+      The text replacement performed by \psfragname\ occurs somewhere between the conversion from
+      \textsc{dvi} to \textsc{ps} in some seemingly magical process that I don't understand. This means
+      that if you look at the \textsc{dvi} output directly you will see a \texttt{PSFrag replacements}
+      table next to the figure. This is normal, so do not panic.
+      
     \subsection{Within pdfLaTeX}%
       There are several ways to include files with postscript commands (such as \psfragname) in pdfLaTeX such
       as {\tt pst-pdf}, {\tt auto-pst-pdf}, {\tt ps4pdf} and \pstoolname, by far the most useful of which is
@@ -123,12 +138,36 @@ matlabfrag(FileName,OPTIONS)
 {\verb|pdflatex -shell-escape example.tex|}\par\noindent
       where {\tt example.tex} is the code above.
       
-    \subsection{Within LyX}%
-      If you are using LyX, you have to ensure \pstoolname\ is installed in your LaTeX distribution, then load
-      the \pstoolname\ package by putting \verb|\usepackage{pstool}| in the preamble, enable
-      \verb|-shell-escape| for when pdfLaTeX is executed, and include the figure using \verb|\psfragfig|
-      as above in a \verb|ERT| box.
+    \subsection{Within LyX}\seclabel{in-lyx}%
+      Using \matlabfrag\ withing LyX is relatively simple. The steps to setting LyX up with \pstoolname\
+      are:
+      \begin{enumerate}
+        \item Ensure \pstoolname\ is installed in your LaTeX distribution. If you wish to use \pstoolname\
+          with non-\textsc{pdf} output, please ensure \pstoolname\ is v1.2 or greater.
+        \item Load \pstoolname\ in the document preamble by going to: \texttt{Document - Settings}, then
+          choose \texttt{LaTeX Preamble} in the navigation panel in the left. Insert the line
+          \verb|\usepackage{pstool}| and apply the settings.
+        \item Enable \verb|-shell-escape| in pdfLaTeX by going to: \texttt{Tools - Preferences}, then
+          choose \texttt{Converters} in the navigation panel in the left. Under \texttt{Converter Definitions}
+          find the \texttt{LaTeX (pdflatex) -> PDF (pdflatex)} entry. Below this change the line\par
+          {\verb|pdflatex $$i|}\par\noindent
+          to\par
+          {\verb|pdflatex -shell-escape $$i|}\par\noindent
+          then click \texttt{Modify} to the
+          upper right, then \texttt{Apply} and \texttt{Save} down the bottom.
+      \end{enumerate}
+      Please note that these steps were written for LyX version 1.5.6, but they should be similar for other
+      versions.
       
+      Once \pstoolname\ is set up for use in LyX, \matlabfrag\ images can be inserted by clicking on the
+      \TeX\ button (Insert Tex Code), and placing the \texttt{psfragfig} command in:\par
+      {\verb|\psfragfig{FileName}|}\par\noindent
+      The \texttt{ERT} box created with the \texttt{psfragfig} command inside it should be placed as you
+      would place a normal figure, for example inside a \texttt{float:Figure}.
+      
+      Please also read the discussion at the end of \Secref{in-latex} regarding the \textsc{dvi} output.
+      Naturally the same applies for the \textsc{dvi} output from LyX as well.
+            
   \section{Creating figures in \matlab}%
     Hypocritically I am now going to suggest a few ways to manipulate figures in \matlab\ before exporting
     them using \matlabfrag.
@@ -303,9 +342,11 @@ matlabfrag(FileName,OPTIONS)
 	    \end{enumerate}
 	    \item If using LyX:
 	    \begin{enumerate}
-	      \item Learn how to use LaTeX!
+	      \item Check to see if the \pstoolname\ package is loading by going to \texttt{Document -- LaTeX log},
+	        and trying to find the \pstoolname\ entry. If it is not found then try repeating the instructions
+	        in \Secref{in-lyx}. If it is there, check to see if it is issuing a warning that \verb|-shell-escape|
+	        is disabled. If so, follow the instructions in \Secref{in-lyx}.
 	    \end{enumerate}
-	    \item Shut up and reboot!
 	    \item Perhaps you have found a bug. If so, please email the smallest self-contained example that
 	      reproduces the bug to me at\par\noindent{\tt zebb.prime+matlabfrag@gmail.com}
 	  \end{enumerate}
