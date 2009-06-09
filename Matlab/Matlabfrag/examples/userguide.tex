@@ -7,12 +7,12 @@
 
 \newcommand\ytick[1]{\ensuremath{\mathcal R(e^{#1 i})}}
 
-\newcommand\matlabfrag{\href{http://www.mathworks.com/matlabcentral/fileexchange/21286}{{\ttfamily matlabfrag}}}
-\newcommand\psfragname{\href{http://www.ctan.org/tex-archive/help/Catalogue/entries/psfrag.html}{{\ttfamily psfrag}}}
-\newcommand\pstoolname{\href{http://www.ctan.org/tex-archive/help/Catalogue/entries/pstool.html}{{\ttfamily pstool}}}
-\newcommand\matlab{{\sc Matlab}}
-\newcommand\tex{{\sc .tex}}
-\newcommand\eps{{\sc .eps}}
+\newcommand\matlabfrag{\texorpdfstring{\href{http://www.mathworks.com/matlabcentral/fileexchange/21286}{{\ttfamily matlabfrag}}}{matlabfrag}}
+\newcommand\psfragname{\texorpdfstring{\href{http://www.ctan.org/tex-archive/help/Catalogue/entries/psfrag.html}{{\ttfamily psfrag}}}{psfrag}}
+\newcommand\pstoolname{\texorpdfstring{\href{http://www.ctan.org/tex-archive/help/Catalogue/entries/pstool.html}{{\ttfamily pstool}}}{pstool}}
+\newcommand\matlab{\texorpdfstring{{\sc Matlab}}{Matlab}}
+\newcommand\tex{\texorpdfstring{{\sc .tex}}{.tex}}
+\newcommand\eps{\texorpdfstring{{\sc .eps}}{.eps}}
 \def\'#1'{{\ttfamily \textquotesingle #1\textquotesingle}}
 
 % Get rid of that stupid S thing in section references.
@@ -61,21 +61,33 @@
     {\verb|graphics/comparison01.m|}\par\noindent
     and the results are shown in \Figref{comparison01}. Notice that the legend box for the LaPrint
     output has been shrunk, and is too small for the equation, and the y axis scale has disappeared.
+    I am unwilling to blame {\ttfamily LaPrint} for the equation not rendering as it may by a bug
+    in any stage of the fairly complicated conversion process (which has nothing to do with
+    \matlabfrag). The output \tex\ and \eps\ files appear to have the text conversion set up
+    properly.
     \begin{figure}[ht]
       \centering
-      \subfloat[graphics/comparison01-matlabfrag]{\fbox{\psfragfig{graphics/comparison01-matlabfrag}}}
+      \subfloat[graphics/comparison01-matlabfrag]{\figlabel{comparison01-matlabfrag}%
+      \fbox{\psfragfig{graphics/comparison01-matlabfrag}}}
       \,
       \subfloat[graphics/comparison01-laprint]{\fbox{\psfragfig{graphics/comparison01-laprint}}}
       \caption{\matlabfrag\ output versus {\ttfamily LaPrint} output for a simple graph. Notice the
         legend box for the {\ttfamily LaPrint} is incorrectly sized, and the y axis scale has
-        disappeared.}
+        disappeared. I am unsure why the equation is not rendering in the {\ttfamily LaPrint}
+        version, and it is unlikely to be the fault of {\ttfamily LaPrint}}.
       \figlabel{comparison01}
     \end{figure}
-  
+    In this second comparison a scaled version of the \matlab\ {\ttfamily peaks} function is
+    presented. The \matlab\ code for this example is given in:\par
+    {\verb|examples/comparison02.m|}\par\noindent
+    and the results are shown in \Figref{comparison02}. The axis labels are handled better by
+    \matlabfrag\, and it also manages to reproduce the x and y axis scales, but I stress that they
+    only work well for the default orientation of a {\ttfamily surf} plot. If you start rotating
+    the image they are unlikely to come out correctly. This is discussed further in \Secref{adv-axis}.
     \begin{figure}[ht]
       \centering
       \subfloat[graphics/comparison02-matlabfrag]{\fbox{\psfragfig{graphics/comparison02-matlabfrag}}}
-      \quad
+      \,
       \subfloat[graphics/comparison02-laprint]{\fbox{\psfragfig{graphics/comparison02-laprint}}}
       \caption{\matlabfrag\ output versus {\ttfamily LaPrint}.}
       \figlabel{comparison02}
@@ -308,19 +320,19 @@ matlabfrag(FileName,OPTIONS)
       \matlabfrag\ recreates multi-line text using a {\ttfamily tabular} environment. If you also use the
       {\ttfamily UserData} property, you will need to manually put the {\ttfamily tabular} environment in, as
       \matlabfrag\ will ignore any {\ttfamily UserData} that is not a string.
-	    \VerbatimInput[firstline=7,lastline=13]{ex10.m}
-	    See \Figref{ex10} for the output.
-	    \begin{figure}[ht]
-	      \centering
-		    \psfragfig{graphics/ex10}
-		    \caption{Multi-line example; three different ways to make multi-line text. 2D arrays, cells
-		      and using {\ttfamily tabular}.}
-		    \figlabel{ex10}
-	    \end{figure}
+      \VerbatimInput[firstline=7,lastline=13]{ex10.m}
+      See \Figref{ex10} for the output.
+      \begin{figure}[ht]
+        \centering
+        \psfragfig{graphics/ex10}
+        \caption{Multi-line example; three different ways to make multi-line text. 2D arrays, cells
+          and using {\ttfamily tabular}.}
+        \figlabel{ex10}
+      \end{figure}
 	  
-	  \subsection{Custom tick labels}%
-	    Custom tick labels can be added directly as strings for LaTeX to interpret. In this example,
-	    the \verb|\ytick| macro has been defined in the preamble of this document as:
+    \subsection{Custom tick labels}%
+      Custom tick labels can be added directly as strings for LaTeX to interpret. In this example,
+      the \verb|\ytick| macro has been defined in the preamble of this document as:
       \par{\verb|\newcommand\ytick[1]{\ensuremath{\mathcal R(e^{#1 i})}}|}\par\noindent
       The \matlab\ example code is:
       \VerbatimInput[firstline=7,lastline=12]{ex11.m}
@@ -331,16 +343,35 @@ matlabfrag(FileName,OPTIONS)
         \caption{Custom tick label example.}
         \figlabel{ex11}
       \end{figure}
+      
+    \subsection{Tick scaling values}\seclabel{axis-scaling}%
+      Tick values automatically generated by \matlab\ may have a scaling value placed at the end
+      of the axis. In two-dimensional plots these will be handled by \matlabfrag\ fairly well, but
+      in some circumstances, such as three-dimensional plots, they will work badly. An example of
+      them being automatically placed in the figure is given in \Figref{comparison02} and the file\par
+      {\verb|examples/comparison02.m|}\par\noindent
+      When \matlabfrag\ fails to insert the scaling properly, I suggest you manually modify the
+      axis ticks, and place the scaling in either the axis label, or place it manually as a text
+      object. Example code for doing this is:
+      \VerbatimInput[firstline=7,lastline=17]{ex14.m}
+      See \Figref{ex14} for the output.
+      \begin{figure}[ht]
+        \centering
+        \psfragfig{graphics/ex14}
+        \caption{Manually inserted axis scalings.}
+        \figlabel{ex14}
+      \end{figure}
+      You can read more about why this is necessary in \Secref{adv-axis}.
 	  
   \section{Frequently (occasionally) asked questions}%
-    \subsection*{Why does the output have [`number'] in it?}
+    \subsection{Why does the output have [`number'] in it?}
 	
 	  Either you are looking at the \eps\ output and that is how it is supposed to look,
 	  or there was a problem processing the image with \psfragname. Check out the troubleshooting section
 	  below.
 	
-	  \subsection*{Why doesn't the \tex\ file have the {\ttfamily includegraphics} statement in it like
-	  LaPrint does?}
+	  \subsection{Why doesn't the \tex\ file have the
+	  \texorpdfstring{{\ttfamily includegraphics}}{includegraphics} statement in it like LaPrint does?}
 	
 	  Firstly, read the Background section above. With all the image files stored in a
 	  {\ttfamily graphics} subdirectory of the main document, I would have to manually open the \tex\ file and
@@ -396,7 +427,7 @@ matlabfrag(FileName,OPTIONS)
           It is usually better to size the image in \matlab\ in the first place, and do no further resizing.
         \item If you have mathematical equations, use the {\ttfamily latex} interpreter. This will make the
           the text object be roughly the right size, which will let \matlab\ place it properly. This is
-          especially useful for legends.
+          especially useful for legends, as shown in \Figref{comparison01-matlabfrag}.
         \item If the text appears to be cropped from the outside of the graphic, try padding the \eps\
           document using the {\ttfamily epspad} option, or try switching to the {\ttfamily pdfcrop} option
           for \pstoolname:\par
@@ -430,17 +461,62 @@ matlabfrag(FileName,OPTIONS)
       asking for support for them in \matlabfrag. If I get enough requests, I will attempt to work in some
       sort of {\ttfamily epscombine} hack.
       
-   \section{Advanced usage: a discussion on axis scales}
+   \section{Advanced usage: a discussion on axis ticks}\seclabel{adv-axis}%
+     Easily the hardest part about writing \matlabfrag\ has been dealing with axis ticks. Their positioning
+     and circumstances when the labels are modified are completely hidden from the user. For example, if the
+     axis is logarithmic, and the ticks occur at powers of 10, then the {\ttfamily xticklabel} properties
+     are written as the power of ten (e.g. 2) and rendered as the 10 to the power of the number (e.g. $10^2$).
+     \matlabfrag\ handles this case by detecting whether {\ttfamily xscale} is set to {\ttfamily log}, and
+     {\ttfamily xticklabelmode} is set to {\ttfamily auto}. If so, it automatically inserts the appropriate
+     LaTeX code.
+     
+     The above case is fairly simple in comparison to how \matlab\ handles axes that have been scaled by
+     a power of ten. For example, if $x\in[0\quad\SI{1}{e-3}]$, then the x ticks would read, say 
+     $[0\quad0.5\quad1]$, and a $\times10^{-3}$ would be placed to the lower right of the x axis.
+     Unfortunately, this $\times10^{-3}$ text object is completely hidden from the user, and as soon as
+     the tick labels are modified by the user it disappears. Both \matlabfrag\ and {\ttfamily LaPrint}
+     have to modify the tick labels to make it possible for \psfragname\ to do text substitution, thus
+     we have to manually recreate this scaling. In \matlabfrag\ this is performed by detecting when:
+     \begin{enumerate}
+       \item {\ttfamily xtickmode} is set to {\ttfamily auto},
+       \item {\ttfamily xticklabelmode} is set to {\ttfamily auto}, and
+       \item there is a scaling value between the {\ttfamily xtick} and {\ttfamily xticklabel} that is
+         equal to a power of ten.
+     \end{enumerate}
+     In these circumstances, \matlabfrag\ does its best to place the scaling value in the most appropriate
+     location. For two-dimensional graphs this isn't too bad, but for three-dimensional plots it is very
+     difficult.
+     
+     The locations for all of the scaling values for all permutations of x and y axis locations
+     in a two dimensional plot are shown in \Figref{ex12}. The code for this example is given in:\par
+     {\verb|examples/ex12.m|}.
      \begin{figure}[ht]
        \centering
        \psfragfig{graphics/ex12}
-       \caption{Axis scale positions.}
+       \caption{Axis scale positions for all permutations of the x and y axis locations.}
        \figlabel{ex12}
      \end{figure}
+     
+     The inbuilt \matlab\ function {\ttfamily plotyy} can create figures with scaling values while
+     manually putting in y tick labels (hence {\ttfamily xticklabelmode} is {\ttfamily auto}).
+     Unfortunately I don't understand how this works (if someone cares to elighten me, please do. My
+     email address appears often in this document.), but by resetting the {\ttfamily xticklabelmode} to
+     {\ttfamily auto} \matlabfrag\ is able to automatically recreate the scaling values. An example of
+     how to do this is given in\par
+     {\verb|examples/ex13.m|}\par\noindent
+     and an example output is given in \Figref{ex13}.
      \begin{figure}[ht]
        \centering
        \psfragfig{graphics/ex13}
-       \caption{Dual y axes.}
+       \caption{Output from the {\ttfamily plotyy} function, slightly modified to make \matlabfrag\
+         automatically generate the y axis scaling values.}
        \figlabel{ex13}
      \end{figure}
+     
+     Lastly, support for tick scaling in three-dimensional plots has been added to \matlabfrag\ for
+     the default orientation of {\ttfamily surf} plots, such as that shown previously in
+     \Figref{comparison02}. If you start to rotate the orientation of the plot it will probably break
+     horribly. In these circumstances I suggest you manually place the scaling in the axis label, or
+     as a text object. Please read through \Secref{axis-scaling} for some information and an example
+     of how to do this.
 \end{document}

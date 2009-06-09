@@ -10,5 +10,6 @@ x = [0 1e-3];
 hax = plotyy(x,y1,x,y2);
 set(hax(1),'ylim',[0 1e-6],'ytickmode','auto','yticklabelmode','auto');
 set(hax(2),'ylim',[0 1e-6],'ytickmode','auto','yticklabelmode','auto');
+set(hax(2),'xticklabel','');
 %% The following is excluded from userguide
 matlabfrag('graphics/ex13');

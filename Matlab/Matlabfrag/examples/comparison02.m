@@ -3,7 +3,7 @@ close all;
 hfig = figure;
 set(hfig,'units','centimeters');
 pos = get(hfig,'position');
-set(hfig,'position',[pos(1:2),6,6]);
+set(hfig,'position',[pos(1:2),5.5,6]);
 
 %% Draw the figure
 [x,y,z] = peaks(20);

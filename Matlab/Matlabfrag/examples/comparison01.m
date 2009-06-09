@@ -3,14 +3,14 @@ close all;
 hfig = figure;
 set(hfig,'units','centimeters');
 pos = get(hfig,'position');
-set(hfig,'position',[pos(1:2),6,4]);
+set(hfig,'position',[pos(1:2),5.5,5]);
 
 %% Draw the figure
 gaussfunc = @(x,a,b,c) a*exp(-(x-b).^2/(2*c^2));
 x = -5:0.1:5;
 y = gaussfunc(x,1e-3,0,2);
 plot(x,y);
-hl=legend( '$f(x)=ae^{-\frac{(x-b)^2}{2c^2}}$', 'location','northoutside' );
+hl=legend( '$f(x)=ae^{-\frac{(x-b)^2}{2c^2}}$', 'location','south' );
 set(hl,'interpreter','latex');
 
 %% Produce the figure with matlabfrag
