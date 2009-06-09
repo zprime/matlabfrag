@@ -393,20 +393,20 @@ end
           % If the scale is not 1, then we need to place a marker near the
           % axis
           if abs(scale-1) > 1e-3
+            LatexScale = ['$\times10^{',num2str(log10(scale)),'}$'];
             % Test to see if this is a 3D or 2D plot
             if isempty(get(handle,'zticklabel')) &&...
                 all( get(handle,'view') == [0 90] )
 
               %2D Plot... fairly easy.
               % Common required data...
-              LatexScale = ['$\times10^{',num2str(log10(scale)),'}$'];
               Xlims = get(handle,'xlim');
               Ylims = get(handle,'ylim');
               XAlignment = get(handle,'XAxisLocation');
               YAlignment = get(handle,'YAxisLocation');
               % 2D plot, so only x and y...
               ReplacementText = ReplacementString();
-              % Make the axis we are looking at he current one
+              % Make the axis we are looking at the current one
               hCA = get(p.Results.handle,'CurrentAxes');
               set(p.Results.handle,'CurrentAxes',handle);
 
@@ -459,12 +459,50 @@ end
               % Delete the label
               AddUndoAction( @() delete(ht) );
             else
+              % Why is this so hard?
               warning('matlabfrag:scaled3Daxis',...
                 ['It looks like your %s axis is scaled on a 3D plot. Unfortunately\n',...
                 'these are very hard to handle, so there may be a problem with\n',...
                 'its placement. If you know of a better algorithm for placing it,\n',...
                 'please let me know at zebb.prime+matlabfrag@gmail.com',...
                 ],jj);
+              % :-(
+              % Make the axis we are looking at the current one
+              hCA = get(p.Results.handle,'CurrentAxes');
+              set(p.Results.handle,'CurrentAxes',handle);
+              ReplacementText = ReplacementString();
+              Xlim = get(gca,'xlim');
+              Ylim = get(gca,'ylim');
+              Zlim = get(gca,'zlim');
+              axlen = @(x) x(2)-x(1);
+              switch lower( jj )
+                case 'x'
+                  ht = text(Xlim(1)+0.6*axlen(Xlim),...
+                    Ylim(1)-0.3*axlen(Ylim),...
+                    Zlim(1),...
+                    ReplacementText);
+                  Alignment = 'bl';
+                case 'y'
+                  ht = text(Xlim(1)-0.3*axlen(Xlim),...
+                    Ylim(1)+0.6*axlen(Ylim),...
+                    Zlim(1),...
+                    ReplacementText);
+                  Alignment = 'br';
+                case 'z'
+                  ht = text(Xlim(1),Ylim(2),Zlim(2)+0.2*axlen(Zlim),...
+                    ReplacementText);
+                  Alignment = 'br';
+                otherwise
+                  error('matlabfrag:wtf',['Bad axis; this error shouldn''t happen.\n',...
+                    'please report it as a bug.']);
+              end
+              % Restore gca
+              set(p.Results.handle,'CurrentAxes',hCA);
+              % Create the replacement command
+              AddPsfragCommand(LatexScale,ReplacementText,Alignment,FontSize,...
+                tickcolour,FontAngle,FontWeight,FixedWidth,[jj,'scale']);
+              % Delete the label
+              AddUndoAction( @() delete(ht) );
             end
           end
         end

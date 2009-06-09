@@ -2,12 +2,17 @@
 close all;
 clear all;
 clc;
-%% Run the comparisons first, because LaPrint requires
+%% Comparisons
+%  Run the comparisons first, because LaPrint requires
 %  the figure number. Seriously, wtf?
-run comparison01;
-close all;
-run comparison02;
-close all;
+if exist('laprint','file')
+  run comparison01;
+  close all;
+  run comparison02;
+  close all;
+else
+  warning('run_all:noLaPrint','LaPrint not found. Skipping the comparisons');
+end
 %% Run the scripts
 numExamples = 14;
 for ii=1:numExamples
