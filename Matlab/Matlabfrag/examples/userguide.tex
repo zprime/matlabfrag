@@ -7,13 +7,13 @@
 
 \newcommand\ytick[1]{\ensuremath{\mathcal R(e^{#1 i})}}
 
-\newcommand\matlabfrag{\href{http://www.mathworks.com/matlabcentral/fileexchange/21286}{{\tt matlabfrag}}}
-\newcommand\psfragname{\href{http://www.ctan.org/tex-archive/help/Catalogue/entries/psfrag.html}{{\tt psfrag}}}
-\newcommand\pstoolname{\href{http://www.ctan.org/tex-archive/help/Catalogue/entries/pstool.html}{{\tt pstool}}}
+\newcommand\matlabfrag{\href{http://www.mathworks.com/matlabcentral/fileexchange/21286}{{\ttfamily matlabfrag}}}
+\newcommand\psfragname{\href{http://www.ctan.org/tex-archive/help/Catalogue/entries/psfrag.html}{{\ttfamily psfrag}}}
+\newcommand\pstoolname{\href{http://www.ctan.org/tex-archive/help/Catalogue/entries/pstool.html}{{\ttfamily pstool}}}
 \newcommand\matlab{{\sc Matlab}}
 \newcommand\tex{{\sc .tex}}
 \newcommand\eps{{\sc .eps}}
-\def\'#1'{\texttt{\textquotesingle #1\textquotesingle}}
+\def\'#1'{{\ttfamily \textquotesingle #1\textquotesingle}}
 
 % Get rid of that stupid S thing in section references.
 \newref{sec}{%
@@ -49,8 +49,37 @@
     most users have their own little scripts set up to format their figures in their own way.
         
     The problem I have with the \verb|\includegraphics{FileName.eps}| line in the \tex\
-    file is that I keep my figures in a {\tt graphics} subdirectory of my main document. This meant I had to
+    file is that I keep my figures in a {\ttfamily graphics} subdirectory of my main document. This meant I had to
     manually edit the \tex\ file every time I exported the figure from \matlab.
+    
+  \section{Compared to LaPrint}%
+    In this section I compare the output from {\ttfamily LaPrint} and \matlabfrag\ for an identical
+    figure. I have chosen some examples that shows some of the weaknesses of {\ttfamily LaPrint}, so
+    be sure to take these comparisons with a grain of salt.
+    
+    The code for the first comparison is given in\par
+    {\verb|graphics/comparison01.m|}\par\noindent
+    and the results are shown in \Figref{comparison01}. Notice that the legend box for the LaPrint
+    output has been shrunk, and is too small for the equation, and the y axis scale has disappeared.
+    \begin{figure}[ht]
+      \centering
+      \subfloat[graphics/comparison01-matlabfrag]{\fbox{\psfragfig{graphics/comparison01-matlabfrag}}}
+      \,
+      \subfloat[graphics/comparison01-laprint]{\fbox{\psfragfig{graphics/comparison01-laprint}}}
+      \caption{\matlabfrag\ output versus {\ttfamily LaPrint} output for a simple graph. Notice the
+        legend box for the {\ttfamily LaPrint} is incorrectly sized, and the y axis scale has
+        disappeared.}
+      \figlabel{comparison01}
+    \end{figure}
+  
+    \begin{figure}[ht]
+      \centering
+      \subfloat[graphics/comparison02-matlabfrag]{\fbox{\psfragfig{graphics/comparison02-matlabfrag}}}
+      \quad
+      \subfloat[graphics/comparison02-laprint]{\fbox{\psfragfig{graphics/comparison02-laprint}}}
+      \caption{\matlabfrag\ output versus {\ttfamily LaPrint}.}
+      \figlabel{comparison02}
+    \end{figure}
     
   \section{Usage}%
     \subsection{Within \matlab}%
@@ -59,12 +88,12 @@
       \begin{verbatim}
 matlabfrag(FileName,OPTIONS)
       \end{verbatim}
-      where {\tt FileName} (required) is the file name for the output \tex\ and \eps\ files, and 
-      {\tt OPTIONS} are key-value pairs for the optional options:
+      where {\ttfamily FileName} (required) is the file name for the output \tex\ and \eps\ files, and 
+      {\ttfamily OPTIONS} are key-value pairs for the optional options:
       \begin{itemize}
-        \item[{\'handle'}] The handle for the figure to export. The default is \texttt{gcf} (`get 
+        \item[{\'handle'}] The handle for the figure to export. The default is {\ttfamily gcf} (`get 
 		  current figure').
-        \item[{\'epspad'}] The number of points to pad the output \eps\ file by. The default is \texttt{[0,0,0,0]}.
+        \item[{\'epspad'}] The number of points to pad the output \eps\ file by. The default is {\ttfamily [0,0,0,0]}.
       \end{itemize}
       Example\nobreak
       \VerbatimInput[firstline=7,lastline=12]{ex01.m}
@@ -73,12 +102,12 @@ matlabfrag(FileName,OPTIONS)
         \centering
         \subfloat[graphics/ex01-1]{\fbox{\psfragfig{graphics/ex01-1}}}\quad
         \subfloat[graphics/ex01-2]{\fbox{\psfragfig{graphics/ex01-2}}}
-        \caption{\matlabfrag\ options example showing the \texttt{epspad} option at work.}
+        \caption{\matlabfrag\ options example showing the {\ttfamily epspad} option at work.}
         \figlabel{ex01}
       \end{figure}
       
       If you wish to show something different in \matlab\ and in the \tex\ document, then you
-      can add it into the {\tt UserData} property of the text, with a {\tt matlabfrag:} prefix. This is
+      can add it into the {\ttfamily UserData} property of the text, with a {\ttfamily matlabfrag:} prefix. This is
       especially useful if you have macros in LaTeX which you want to use, or if you want to use some
       commands not included in the \matlab\ LaTeX installation. In this example, the \verb|\LaTeX| macro
       typesets LaTeX as \LaTeX.
@@ -112,19 +141,19 @@ matlabfrag(FileName,OPTIONS)
 \end{document}
       \end{verbatim}
       Notice the lack of a file extension in the \verb|\psfragfig| macro. This is a requirement of \pstoolname.
-      \pstoolname\ also loads the {\tt graphicx}, {\tt psfrag} and {\tt color} packages (as well as a few others),
+      \pstoolname\ also loads the {\ttfamily graphicx}, {\ttfamily psfrag} and {\ttfamily color} packages (as well as a few others),
       so it is not necessary to explicitly load these packages.
       
       For more information about \pstoolname\ or \psfragname\ please see their respective manuals.
       
       The text replacement performed by \psfragname\ occurs somewhere between the conversion from
       \textsc{dvi} to \textsc{ps} in some seemingly magical process that I don't understand. This means
-      that if you look at the \textsc{dvi} output directly you will see a \texttt{PSFrag replacements}
+      that if you look at the \textsc{dvi} output directly you will see a {\ttfamily PSFrag replacements}
       table next to the figure. This is normal, so do not panic.
       
     \subsection{Within pdfLaTeX}%
       There are several ways to include files with postscript commands (such as \psfragname) in pdfLaTeX such
-      as {\tt pst-pdf}, {\tt auto-pst-pdf}, {\tt ps4pdf} and \pstoolname, by far the most useful of which is
+      as {\ttfamily pst-pdf}, {\ttfamily auto-pst-pdf}, {\ttfamily ps4pdf} and \pstoolname, by far the most useful of which is
       \pstoolname.  The document is set up the same way as the LaTeX example above:
       \begin{verbatim}
 \documentclass{article}
@@ -136,7 +165,7 @@ matlabfrag(FileName,OPTIONS)
       The only difference being that \pstoolname\ runs some external processes to run the postscript commands,
       and as such it needs the \verb|-shell-escape| command when being called:\par
 {\verb|pdflatex -shell-escape example.tex|}\par\noindent
-      where {\tt example.tex} is the code above.
+      where {\ttfamily example.tex} is the code above.
       
     \subsection{Within LyX}\seclabel{in-lyx}%
       Using \matlabfrag\ withing LyX is relatively simple. The steps to setting LyX up with \pstoolname\
@@ -144,26 +173,26 @@ matlabfrag(FileName,OPTIONS)
       \begin{enumerate}
         \item Ensure \pstoolname\ is installed in your LaTeX distribution. If you wish to use \pstoolname\
           with non-\textsc{pdf} output, please ensure \pstoolname\ is v1.2 or greater.
-        \item Load \pstoolname\ in the document preamble by going to: \texttt{Document - Settings}, then
-          choose \texttt{LaTeX Preamble} in the navigation panel in the left. Insert the line
+        \item Load \pstoolname\ in the document preamble by going to: {\ttfamily Document - Settings}, then
+          choose {\ttfamily LaTeX Preamble} in the navigation panel in the left. Insert the line
           \verb|\usepackage{pstool}| and apply the settings.
-        \item Enable \verb|-shell-escape| in pdfLaTeX by going to: \texttt{Tools - Preferences}, then
-          choose \texttt{Converters} in the navigation panel in the left. Under \texttt{Converter Definitions}
-          find the \texttt{LaTeX (pdflatex) -> PDF (pdflatex)} entry. Below this change the line\par
+        \item Enable \verb|-shell-escape| in pdfLaTeX by going to: {\ttfamily Tools - Preferences}, then
+          choose {\ttfamily Converters} in the navigation panel in the left. Under {\ttfamily Converter Definitions}
+          find the {\ttfamily LaTeX (pdflatex) -> PDF (pdflatex)} entry. Below this change the line\par
           {\verb|pdflatex $$i|}\par\noindent
           to\par
           {\verb|pdflatex -shell-escape $$i|}\par\noindent
-          then click \texttt{Modify} to the
-          upper right, then \texttt{Apply} and \texttt{Save} down the bottom.
+          then click {\ttfamily Modify} to the
+          upper right, then {\ttfamily Apply} and {\ttfamily Save} down the bottom.
       \end{enumerate}
       Please note that these steps were written for LyX version 1.5.6, but they should be similar for other
       versions.
       
       Once \pstoolname\ is set up for use in LyX, \matlabfrag\ images can be inserted by clicking on the
-      \TeX\ button (Insert Tex Code), and placing the \texttt{psfragfig} command in:\par
+      \TeX\ button (Insert Tex Code), and placing the {\ttfamily psfragfig} command in:\par
       {\verb|\psfragfig{FileName}|}\par\noindent
-      The \texttt{ERT} box created with the \texttt{psfragfig} command inside it should be placed as you
-      would place a normal figure, for example inside a \texttt{float:Figure}.
+      The {\ttfamily ERT} box created with the {\ttfamily psfragfig} command inside it should be placed as you
+      would place a normal figure, for example inside a {\ttfamily float:Figure}.
       
       Please also read the discussion at the end of \Secref{in-latex} regarding the \textsc{dvi} output.
       Naturally the same applies for the \textsc{dvi} output from LyX as well.
@@ -185,88 +214,88 @@ matlabfrag(FileName,OPTIONS)
         \figlabel{ex03}
       \end{figure}
       
-    \subsection{{\tt Color}}%
-      The {\tt color} property is a three element vector representing the RGB colour of the text.
-      \matlabfrag\ will respect the colour set in \matlab, but may require that you load the {\tt color}
-      package in LaTeX (\pstoolname\ implicitly loads the {\tt color} package).
+    \subsection{{\ttfamily Color}}%
+      The {\ttfamily color} property is a three element vector representing the RGB colour of the text.
+      \matlabfrag\ will respect the colour set in \matlab, but may require that you load the {\ttfamily color}
+      package in LaTeX (\pstoolname\ implicitly loads the {\ttfamily color} package).
       \VerbatimInput[firstline=7,lastline=11]{ex04.m}
       See \Figref{ex04} for the output.
       \begin{figure}[ht]
         \centering
         \psfragfig{graphics/ex04}
-        \caption{{\tt Color} example; the text should be coloured.}
+        \caption{{\ttfamily Color} example; the text should be coloured.}
         \figlabel{ex04}
       \end{figure}
     
-    \subsection{{\tt FontSize}}%
-      All text in \matlab\ figures has a {\tt FontSize} property which \matlabfrag\ respects; the size
+    \subsection{{\ttfamily FontSize}}%
+      All text in \matlab\ figures has a {\ttfamily FontSize} property which \matlabfrag\ respects; the size
       specified in the figure is the size it will be in the LaTeX output document.
       \VerbatimInput[firstline=7,lastline=11]{ex05.m}
       See \Figref{ex05} for the output.
       \begin{figure}[ht]
         \centering
         \psfragfig{graphics/ex05}
-        \caption{{\tt FontSize} example; the text should be different sizes.}
+        \caption{{\ttfamily FontSize} example; the text should be different sizes.}
         \figlabel{ex05}
       \end{figure}
 
       
-    \subsection{{\tt FontAngle}}%
-      {\tt FontAngle} is a property shared by all text in a \matlab\ figure. \matlabfrag\ respects
-      {\tt FontAngle} in that {\tt italic} and {\tt oblique} will be italic in the LaTeX output
+    \subsection{{\ttfamily FontAngle}}%
+      {\ttfamily FontAngle} is a property shared by all text in a \matlab\ figure. \matlabfrag\ respects
+      {\ttfamily FontAngle} in that {\ttfamily italic} and {\ttfamily oblique} will be italic in the LaTeX output
       document.
       \VerbatimInput[firstline=7,lastline=11]{ex06.m}
       See \Figref{ex06} for the output.
       \begin{figure}[ht]
         \centering
         \psfragfig{graphics/ex06}
-        \caption{{\tt FontAngle} example; Oblique and Italic font should both be italic here.}
+        \caption{{\ttfamily FontAngle} example; Oblique and Italic font should both be italic here.}
         \figlabel{ex06}
       \end{figure}
       
-    \subsection{{\tt FontWeight}}%
-      Another text property from \matlab\ figures that \matlabfrag\ respects is {\tt FontWeight}, such
-      that any text set to {\tt bold} will be made bold in the output LaTeX document. {\tt light},
-      {\tt demi} and {\tt normal} have no effect on the font in the LaTeX output.
+    \subsection{{\ttfamily FontWeight}}%
+      Another text property from \matlab\ figures that \matlabfrag\ respects is {\ttfamily FontWeight}, such
+      that any text set to {\ttfamily bold} will be made bold in the output LaTeX document. {\ttfamily light},
+      {\ttfamily demi} and {\ttfamily normal} have no effect on the font in the LaTeX output.
       \VerbatimInput[firstline=7,lastline=12]{ex07.m}
       See \Figref{ex07} for the output.
       \begin{figure}[ht]
         \centering
         \psfragfig{graphics/ex07}
-        \caption{{\tt FontWeight} example; bold should be bold, demi and light do not really translate to
+        \caption{{\ttfamily FontWeight} example; bold should be bold, demi and light do not really translate to
         LaTeX, so they should default to normal.}
         \figlabel{ex07}
       \end{figure}
             
-    \subsection{{\tt FontName}}%
-      {\tt FontName} is a property that \matlabfrag\ \emph{does not} respect, with one exception. One
+    \subsection{{\ttfamily FontName}}%
+      {\ttfamily FontName} is a property that \matlabfrag\ \emph{does not} respect, with one exception. One
       of the basic ideas behind using \matlabfrag\ and \psfragname\ is to match the font in figures to
       that of the text, so it does not make sense to use this property, except when it has been set to
-      {\tt FixedWidth}, in which case the font in the output LaTeX document will be fixed-width (i.e.,
+      {\ttfamily FixedWidth}, in which case the font in the output LaTeX document will be fixed-width (i.e.,
       \verb|\ttfamily|).
       \VerbatimInput[firstline=7,lastline=11]{ex08.m}
       See \Figref{ex08} for the output.
       \begin{figure}[ht]
         \centering
         \psfragfig{graphics/ex08}
-        \caption{{\tt FontName} example; fixed-width should be in a typewriter font, while Comic Sans should
+        \caption{{\ttfamily FontName} example; fixed-width should be in a typewriter font, while Comic Sans should
         be changed to the font of the document.}
         \figlabel{ex08}
       \end{figure}
       
-    \subsection{{\tt Interpreter}}%
+    \subsection{{\ttfamily Interpreter}}%
       \matlab\ has three (well, two really) text interpreters that is uses to render the text. These
-      are {\tt tex}, {\tt latex} and {\tt none}. I generally don't recommend the use of the default
-      {\tt tex} interpreter if rendering anything mathematical and using \matlabfrag, as while the {\tt tex}
+      are {\ttfamily tex}, {\ttfamily latex} and {\ttfamily none}. I generally don't recommend the use of the default
+      {\ttfamily tex} interpreter if rendering anything mathematical and using \matlabfrag, as while the {\ttfamily tex}
       interpreter may render a mathematical expression fine, it may not work in LaTeX.
       
-      The {\tt latex} interpreter is especially useful for rendering mathematical formula.
+      The {\ttfamily latex} interpreter is especially useful for rendering mathematical formula.
       \VerbatimInput[firstline=7,lastline=11]{ex09.m}
       See \Figref{ex09} for the output.
 	    \begin{figure}[ht]
 	      \centering
 		  \psfragfig{graphics/ex09}
-		  \caption{{\tt Interpreter} example; both equations should be the same, despite using a different
+		  \caption{{\ttfamily Interpreter} example; both equations should be the same, despite using a different
 		    interpreter in \matlab.}
 		  \figlabel{ex09}
 	    \end{figure}
@@ -274,18 +303,18 @@ matlabfrag(FileName,OPTIONS)
     \subsection{Multi-line text}%
       Multi-line text can be entered into \matlab\ using either a cell or a two-dimensional character
       matrix. If using a character matrix, \matlabfrag\ preserves all of the white spaces, so if you
-      do not wish for this to occur, use cells instead (or check out the {\tt cellstr} function).
+      do not wish for this to occur, use cells instead (or check out the {\ttfamily cellstr} function).
       
-      \matlabfrag\ recreates multi-line text using a {\tt tabular} environment. If you also use the
-      {\tt UserData} property, you will need to manually put the {\tt tabular} environment in, as
-      \matlabfrag\ will ignore any {\tt UserData} that is not a string.
+      \matlabfrag\ recreates multi-line text using a {\ttfamily tabular} environment. If you also use the
+      {\ttfamily UserData} property, you will need to manually put the {\ttfamily tabular} environment in, as
+      \matlabfrag\ will ignore any {\ttfamily UserData} that is not a string.
 	    \VerbatimInput[firstline=7,lastline=13]{ex10.m}
 	    See \Figref{ex10} for the output.
 	    \begin{figure}[ht]
 	      \centering
 		    \psfragfig{graphics/ex10}
 		    \caption{Multi-line example; three different ways to make multi-line text. 2D arrays, cells
-		      and using {\tt tabular}.}
+		      and using {\ttfamily tabular}.}
 		    \figlabel{ex10}
 	    \end{figure}
 	  
@@ -310,11 +339,11 @@ matlabfrag(FileName,OPTIONS)
 	  or there was a problem processing the image with \psfragname. Check out the troubleshooting section
 	  below.
 	
-	  \subsection*{Why doesn't the \tex\ file have the {\tt includegraphics} statement in it like
+	  \subsection*{Why doesn't the \tex\ file have the {\ttfamily includegraphics} statement in it like
 	  LaPrint does?}
 	
 	  Firstly, read the Background section above. With all the image files stored in a
-	  {\tt graphics} subdirectory of the main document, I would have to manually open the \tex\ file and
+	  {\ttfamily graphics} subdirectory of the main document, I would have to manually open the \tex\ file and
 	  insert the path into the that line. This was one of the reasons I wrote \matlabfrag\ in the first
 	  place.
 	
@@ -323,32 +352,95 @@ matlabfrag(FileName,OPTIONS)
 	  \pstoolname\ works fine in LaTeX so there really is no need to manually put the \verb|\includegraphics|
 	  line in.
 	
-    \section{Troubleshooting}	
-	  \begin{enumerate}
-	    \item Check that all LaTeX statements in your figure are valid. If you are having problems, try a
-	      simple example that is known to work.
-	    \item If using pdfLaTeX and \pstoolname, check:
+    \section{Troubleshooting}
+      \subsection{I get an error in \matlab!}
+        \matlabfrag\ should not generate any errors from user behaviour, so it is most likely a bug.
+        Please email the smallest self-contained example that reproduces the bug to me at
+        \par\noindent{\ttfamily zebb.prime+matlabfrag@gmail.com}
+      
+      \subsection{I get a warning in \matlab!}
+        Warnings created by \matlabfrag\ are there for a reason. Read through them, as they explain what
+        the problem is and what \matlabfrag\ is doing about it.
+      
+      \subsection{My graphic exports from \matlab\ fine, but does not compile in LaTeX/pdfLaTeX/LyX!}
 	    \begin{enumerate}
-	      \item \verb|-shell-escape| option is set when calling pdfLaTeX.
-	    \end{enumerate}
-	    \item If using LaTeX and \pstoolname, check:
-	    \begin{enumerate}
-	      \item \pstoolname\ is at least at version 1.2. An alternative location to finding \pstoolname\ is
-		    \url{http://github.com/wspr/pstool/}.
-	    \end{enumerate}
-	    \item If using LaTeX or pdfLaTeX with anything else:
-	    \begin{enumerate}
-	      \item Install \pstoolname !
-	    \end{enumerate}
-	    \item If using LyX:
-	    \begin{enumerate}
-	      \item Check to see if the \pstoolname\ package is loading by going to \texttt{Document -- LaTeX log},
-	        and trying to find the \pstoolname\ entry. If it is not found then try repeating the instructions
-	        in \Secref{in-lyx}. If it is there, check to see if it is issuing a warning that \verb|-shell-escape|
-	        is disabled. If so, follow the instructions in \Secref{in-lyx}.
-	    \end{enumerate}
-	    \item Perhaps you have found a bug. If so, please email the smallest self-contained example that
-	      reproduces the bug to me at\par\noindent{\tt zebb.prime+matlabfrag@gmail.com}
+	      \item Check that all LaTeX statements in your figure are valid. If you are having problems, try a
+	        simple example that is known to work.
+	      \item If using pdfLaTeX and \pstoolname, check:
+	      \begin{enumerate}
+	        \item \verb|-shell-escape| option is set when calling pdfLaTeX.
+	      \end{enumerate}
+	      \item If using LaTeX and \pstoolname, check:
+	      \begin{enumerate}
+	        \item \pstoolname\ is at least at version 1.2. An alternative location to finding \pstoolname\ is
+		      \url{http://github.com/wspr/pstool/}.
+	      \end{enumerate}
+	      \item If using LaTeX or pdfLaTeX with anything else:
+	      \begin{enumerate}
+	        \item Install \pstoolname !
+	      \end{enumerate}
+	      \item If using LyX:
+  	    \begin{enumerate}
+	        \item Check to see if the \pstoolname\ package is loading by going to {\ttfamily Document -- LaTeX log},
+	          and trying to find the \pstoolname\ entry. If it is not found then try repeating the instructions
+	          in \Secref{in-lyx}. If it is there, check to see if it is issuing a warning that \verb|-shell-escape|
+	          is disabled. If so, follow the instructions in \Secref{in-lyx}.
+	      \end{enumerate}
 	  \end{enumerate}
-  
+
+    \subsection{My graphic exports from \matlab\ and compiles in LaTeX/pdfLaTeX/LyX but doesn't look right!}
+      \begin{enumerate}
+      \item The text is running over lines or is cut out!
+      \begin{enumerate}
+        \item This most likely happens if you resize the image in LaTeX using a \verb|[width=x]| argument.
+          It is usually better to size the image in \matlab\ in the first place, and do no further resizing.
+        \item If you have mathematical equations, use the {\ttfamily latex} interpreter. This will make the
+          the text object be roughly the right size, which will let \matlab\ place it properly. This is
+          especially useful for legends.
+        \item If the text appears to be cropped from the outside of the graphic, try padding the \eps\
+          document using the {\ttfamily epspad} option, or try switching to the {\ttfamily pdfcrop} option
+          for \pstoolname:\par
+          {\verb|\usepackage[crop=pdfcrop]{pstool}|}
+      \end{enumerate}
+	    \item A complicated graphic appears different on screen than it does in the document.
+	      \begin{enumerate}
+	        \item This is most likely an issue caused by a renderer. For more information, read the discussion
+	          on renderers in \Secref{renderers}.
+	      \end{enumerate}
+	    \end{enumerate}
+
+    \section{Advanced usage: a discussion on renderers}\seclabel{renderers}%
+      \matlab\ has three different renderers that it uses to render a graphic on screen; {\ttfamily Painters},
+      {\ttfamily OpenGL} and {\ttfamily Z-Buffer}. Of these, only the {\ttfamily Painters} renderer can export
+      an image in a vector format which is needed for the text objects to be embedded as text. If one of the
+      other renderers is used the text becomes rasterised, and hence no text replacement can take place.
+      
+      During the export process, \matlabfrag\ causes the \eps\ file to be printed using the {\ttfamily Painters}
+      renderer, which in certain complicated cases can cause a difference between the image on-screen and that
+      printed.
+      
+      Complicated graphics printed using the {\ttfamily Painters} renderer will sometimes be quite large. This
+      is usually not a problem as they are usually compressed quite efficiently when converted to {\sc pdf}.
+      
+      If you manually select a renderer that is not {\ttfamily Painters}, \matlabfrag\ will issue a warning
+      explaining the problem.
+    
+      If you require either the {\ttfamily OpenGL} or the {\ttfamily Z-Buffer} renderer, please email me at\par
+      {\ttfamily zebb.prime+matlabfrag@gmail.com}\par\noindent
+      asking for support for them in \matlabfrag. If I get enough requests, I will attempt to work in some
+      sort of {\ttfamily epscombine} hack.
+      
+   \section{Advanced usage: a discussion on axis scales}
+     \begin{figure}[ht]
+       \centering
+       \psfragfig{graphics/ex12}
+       \caption{Axis scale positions.}
+       \figlabel{ex12}
+     \end{figure}
+     \begin{figure}[ht]
+       \centering
+       \psfragfig{graphics/ex13}
+       \caption{Dual y axes.}
+       \figlabel{ex13}
+     \end{figure}
 \end{document}
