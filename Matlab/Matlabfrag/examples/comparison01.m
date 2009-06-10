@@ -17,7 +17,6 @@ set(hl,'interpreter','latex');
 matlabfrag('graphics/comparison01-matlabfrag');
 
 %% Produce the figure with LaPrint
-cd graphics
 % These are the options required to make LaPrint behave in the same manner
 % as matlabfrag
 laprint(1,'comparison01-laprint','width',6,'factor',1,'scalefonts','off',...
@@ -34,4 +33,4 @@ texfile = regexprep(texfile,'\\end\{psfrags\}','%\\end{psfrags}');
 fh = fopen('comparison01-laprint.tex','w');
 fwrite(fh,texfile);
 fh=fclose(fh);
-cd ..
+movefile('comparison01-laprint*','graphics/');
