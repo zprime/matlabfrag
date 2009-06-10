@@ -30,7 +30,7 @@
 % ylabel('random','fontsize',14);
 % matlabfrag('RandPlot','epspad',[5,0,0,0]);
 %
-% v0.4.5 09-Jun-2009
+% v0.5.0 10-Jun-2009
 %
 % Please report bugs to zebb.prime+matlabfrag@gmail.com
 %
@@ -56,8 +56,7 @@ TEXHDR = sprintf('%% Generated using matlabfrag\n%% Version: %s\n%% Version Date
   Version,VersionDate);
 
 % Global macros
-REPLACEMENT_FORMAT = '[%03d]';
-REPLACEMENT_MAXLENGTH = 5;
+REPLACEMENT_FORMAT = '%03d';
 USERDATA_PREFIX = 'matlabfrag:';
 
 p = inputParser;
@@ -336,8 +335,8 @@ end
     % Retrieve the common options
     [FontSize,FontAngle,FontWeight,FixedWidth] = CommonOptions(handle);
     % Assign a replacement action for the string
-    ReplacementString = ReplacementString();
-    SetUnsetProperties(handle,'String',ReplacementString);
+    CurrentReplacement = ReplacementString();
+    SetUnsetProperties(handle,'String',CurrentReplacement);
     % Check for a 'UserData' property, which replaces the string with latex
     if ~isempty(UserString)
       String = cell2mat(UserString{:});
@@ -355,7 +354,7 @@ end
     % Get the text colour
     Colour = get(handle,'color');
     % Finally create the replacement command
-    AddPsfragCommand(String,ReplacementString,[valign,halign],...
+    AddPsfragCommand(String,CurrentReplacement,[valign,halign],...
       FontSize,Colour,FontAngle,FontWeight,FixedWidth,'text');
   end
 
@@ -413,7 +412,7 @@ end
               XAlignment = get(handle,'XAxisLocation');
               YAlignment = get(handle,'YAxisLocation');
               % 2D plot, so only x and y...
-              ReplacementText = ReplacementString();
+              CurrentReplacement = ReplacementString();
               % Make the axis we are looking at the current one
               hCA = get(p.Results.handle,'CurrentAxes');
               set(p.Results.handle,'CurrentAxes',handle);
@@ -421,13 +420,13 @@ end
               % X axis scale
               if strcmpi(jj,'x')
                 if strcmpi(XAlignment,'bottom');
-                  ht = text(Xlims(2),Ylims(1),ReplacementText,'fontsize',FontSize);
+                  ht = text(Xlims(2),Ylims(1),CurrentReplacement,'fontsize',FontSize);
                   extent = get(ht,'extent');
                   position = get(ht,'position');
                   set(ht,'position',[position(1) position(2)-0.6*extent(4) position(3)]);
                   Alignment = 'tc';
                 else
-                  ht = text(Xlims(2),Ylims(2),ReplacementText,'fontsize',FontSize);
+                  ht = text(Xlims(2),Ylims(2),CurrentReplacement,'fontsize',FontSize);
                   extent = get(ht,'extent');
                   position = get(ht,'position');
                   set(ht,'position',[position(1) position(2)+1.2*extent(4) position(3)]);
@@ -438,9 +437,9 @@ end
               else
                 if strcmpi(XAlignment,'bottom')
                   if strcmpi(YAlignment,'left')
-                    ht = text(Xlims(1),Ylims(2),ReplacementText,'fontsize',FontSize);
+                    ht = text(Xlims(1),Ylims(2),CurrentReplacement,'fontsize',FontSize);
                   else
-                    ht = text(Xlims(2),Ylims(2),ReplacementText,'fontsize',FontSize);
+                    ht = text(Xlims(2),Ylims(2),CurrentReplacement,'fontsize',FontSize);
                   end
                   extent = get(ht,'extent');
                   position = get(ht,'position');
@@ -448,9 +447,9 @@ end
                   Alignment = 'bc';
                 else
                   if strcmpi(YAlignment,'left')
-                    ht = text(Xlims(1),Ylims(1),ReplacementText,'fontsize',FontSize);
+                    ht = text(Xlims(1),Ylims(1),CurrentReplacement,'fontsize',FontSize);
                   else
-                    ht = text(Xlims(2),Ylims(1),ReplacementText,'fontsize',FontSize);
+                    ht = text(Xlims(2),Ylims(1),CurrentReplacement,'fontsize',FontSize);
                   end
                   extent = get(ht,'extent');
                   position = get(ht,'position');
@@ -462,7 +461,7 @@ end
               % Restore gca
               set(p.Results.handle,'CurrentAxes',hCA);
               % Create the replacement command
-              AddPsfragCommand(LatexScale,ReplacementText,Alignment,FontSize,...
+              AddPsfragCommand(LatexScale,CurrentReplacement,Alignment,FontSize,...
                 tickcolour,FontAngle,FontWeight,FixedWidth,[jj,'scale']);
               % Delete the label
               AddUndoAction( @() delete(ht) );
@@ -478,7 +477,7 @@ end
               % Make the axis we are looking at the current one
               hCA = get(p.Results.handle,'CurrentAxes');
               set(p.Results.handle,'CurrentAxes',handle);
-              ReplacementText = ReplacementString();
+              CurrentReplacement = ReplacementString();
               Xlim = get(gca,'xlim');
               Ylim = get(gca,'ylim');
               Zlim = get(gca,'zlim');
@@ -488,17 +487,17 @@ end
                   ht = text(Xlim(1)+0.6*axlen(Xlim),...
                     Ylim(1)-0.3*axlen(Ylim),...
                     Zlim(1),...
-                    ReplacementText);
+                    CurrentReplacement);
                   Alignment = 'bl';
                 case 'y'
                   ht = text(Xlim(1)-0.3*axlen(Xlim),...
                     Ylim(1)+0.6*axlen(Ylim),...
                     Zlim(1),...
-                    ReplacementText);
+                    CurrentReplacement);
                   Alignment = 'br';
                 case 'z'
                   ht = text(Xlim(1),Ylim(2),Zlim(2)+0.2*axlen(Zlim),...
-                    ReplacementText);
+                    CurrentReplacement);
                   Alignment = 'br';
                 otherwise
                   error('matlabfrag:wtf',['Bad axis; this error shouldn''t happen.\n',...
@@ -507,7 +506,7 @@ end
               % Restore gca
               set(p.Results.handle,'CurrentAxes',hCA);
               % Create the replacement command
-              AddPsfragCommand(LatexScale,ReplacementText,Alignment,FontSize,...
+              AddPsfragCommand(LatexScale,CurrentReplacement,Alignment,FontSize,...
                 tickcolour,FontAngle,FontWeight,FixedWidth,[jj,'scale']);
               % Delete the label
               AddUndoAction( @() delete(ht) );
@@ -529,7 +528,7 @@ end
         end
         clear TicksAreNumbers
 
-        tickreplacements = char(zeros(size(ticklabels,1),REPLACEMENT_MAXLENGTH));
+        tickreplacements = cell(1,size(ticklabels,1));
         % Process the X and Y tick alignment
         if ~strcmp(jj,'z')
           switch get(handle,[jj,'axislocation'])
@@ -550,15 +549,14 @@ end
 
         % Now process the actual tick labels themselves...
         for kk=1:size(ticklabels,1)
-          tickreplacements(kk,:) = sprintf(['% ',...
-            num2str(REPLACEMENT_MAXLENGTH),'s'],ReplacementString());
-          AddPsfragCommand(ticklabels(kk,:),tickreplacements(kk,:),...
+          tickreplacements{kk} = ReplacementString();
+          AddPsfragCommand(ticklabels(kk,:),tickreplacements{kk},...
             tickalignment,FontSize,tickcolour,FontAngle,FontWeight,...
             FixedWidth,[jj,'tick']);
         end
 
         % Now add the replacement action...
-        SetUnsetProperties(handle,[jj,'ticklabel'],char(tickreplacements));
+        SetUnsetProperties(handle,[jj,'ticklabel'],tickreplacements);
         if AutoTick; AddUndoAction( @() set(handle,[jj,'tickmode'],'auto') ); end;
         if AutoTickLabel; AddUndoAction( @() set(handle,[jj,'ticklabelmode'],'auto')); end;
       end
@@ -566,8 +564,8 @@ end
   end
 
 % Get the next replacement string
-  function ReplacementString = ReplacementString()
-    ReplacementString = sprintf(REPLACEMENT_FORMAT,StringCounter);
+  function CurrentReplacement = ReplacementString()
+    CurrentReplacement = sprintf(REPLACEMENT_FORMAT,StringCounter);
     StringCounter = StringCounter+1;
   end
 

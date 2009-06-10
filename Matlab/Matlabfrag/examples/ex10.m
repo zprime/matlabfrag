@@ -2,7 +2,7 @@
 hfig = figure;
 set(hfig,'units','centimeters','NumberTitle','off','Name','ex10');
 pos = get(hfig,'position');
-set(hfig,'position',[pos(1:2),6,4]);
+set(hfig,'position',[pos(1:2),6,5]);
 %% Everything below appears in userguide
 plot(rand(2));
 axis([1 2 0 1]);

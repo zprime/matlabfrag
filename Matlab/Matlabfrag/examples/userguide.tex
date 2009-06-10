@@ -74,7 +74,7 @@
       \caption{\matlabfrag\ output versus {\ttfamily LaPrint} output for a simple graph. Notice the
         legend box for the {\ttfamily LaPrint} is incorrectly sized, and the y axis scale has
         disappeared. I am unsure why the equation is not rendering in the {\ttfamily LaPrint}
-        version, and it is unlikely to be the fault of {\ttfamily LaPrint}}.
+        version, and it is unlikely to be the fault of {\ttfamily LaPrint}.}
       \figlabel{comparison01}
     \end{figure}
     In this second comparison a scaled version of the \matlab\ {\ttfamily peaks} function is
@@ -107,7 +107,7 @@ matlabfrag(FileName,OPTIONS)
 		  current figure').
         \item[{\'epspad'}] The number of points to pad the output \eps\ file by. The default is {\ttfamily [0,0,0,0]}.
       \end{itemize}
-      Example\nobreak
+      Some examples are given below.\nobreak
       \VerbatimInput[firstline=7,lastline=12]{ex01.m}
       See \Figref{ex01} for the output.
       \begin{figure}[ht]
@@ -164,7 +164,7 @@ matlabfrag(FileName,OPTIONS)
       table next to the figure. This is normal, so do not panic.
       
     \subsection{Within pdfLaTeX}%
-      There are several ways to include files with postscript commands (such as \psfragname) in pdfLaTeX such
+      There are several ways to include files with PostScript commands (such as \psfragname) in pdfLaTeX such
       as {\ttfamily pst-pdf}, {\ttfamily auto-pst-pdf}, {\ttfamily ps4pdf} and \pstoolname, by far the most useful of which is
       \pstoolname.  The document is set up the same way as the LaTeX example above:
       \begin{verbatim}
@@ -210,8 +210,7 @@ matlabfrag(FileName,OPTIONS)
       Naturally the same applies for the \textsc{dvi} output from LyX as well.
             
   \section{Creating figures in \matlab}%
-    Hypocritically I am now going to suggest a few ways to manipulate figures in \matlab\ before exporting
-    them using \matlabfrag.
+    I am now going to suggest a few ways to manipulate figures in \matlab\ before exporting them using \matlabfrag.
     
     \subsection{Sizing}%
       I suggest that the first thing you do when creating a figure is setting it to the size that you want
@@ -364,7 +363,7 @@ matlabfrag(FileName,OPTIONS)
       You can read more about why this is necessary in \Secref{adv-axis}.
 	  
   \section{Frequently (occasionally) asked questions}%
-    \subsection{Why does the output have [`number'] in it?}
+    \subsection{Why does the output have three digit numbers all through it?}
 	
 	  Either you are looking at the \eps\ output and that is how it is supposed to look,
 	  or there was a problem processing the image with \psfragname. Check out the troubleshooting section
@@ -424,17 +423,17 @@ matlabfrag(FileName,OPTIONS)
 	      \end{enumerate}
 	  \end{enumerate}
 
-    \subsection{My graphic exports from \matlab\ and compiles in LaTeX/pdfLaTeX/LyX but doesn't look right!}
+    \subsection{My graphic exports from \matlab\ and compiles in LaTeX/\texorpdfstring{\\}{}pdfLaTeX/LyX but doesn't look right!}
       \begin{enumerate}
       \item The text is running over lines or is cut out!
       \begin{enumerate}
         \item This most likely happens if you resize the image in LaTeX using a \verb|[width=x]| argument.
           It is usually better to size the image in \matlab\ in the first place, and do no further resizing.
         \item If you have mathematical equations, use the {\ttfamily latex} interpreter. This will make the
-          the text object be roughly the right size, which will let \matlab\ place it properly. This is
+          text object be roughly the right size, which will let \matlab\ place it properly. This is
           especially useful for legends, as shown in \Figref{comparison01-matlabfrag}.
-        \item If the text appears to be cropped from the outside of the graphic, try padding the \eps\
-          document using the {\ttfamily epspad} option, or try switching to the {\ttfamily pdfcrop} option
+        \item If the text appears to be cropped from the outside of the graphic then try padding the \eps\
+          file using the {\ttfamily epspad} option, or try the {\ttfamily pdfcrop} option
           for \pstoolname:\par
           {\verb|\usepackage[crop=pdfcrop]{pstool}|}
       \end{enumerate}
@@ -447,7 +446,7 @@ matlabfrag(FileName,OPTIONS)
 
     \section{Advanced usage: a discussion on renderers}\seclabel{renderers}%
       \matlab\ has three different renderers that it uses to render a graphic on screen; {\ttfamily Painters},
-      {\ttfamily OpenGL} and {\ttfamily Z-Buffer}. Of these, only the {\ttfamily Painters} renderer can export
+      {\ttfamily OpenGL}, and {\ttfamily Z-Buffer}. Of these, only the {\ttfamily Painters} renderer can export
       an image in a vector format which is needed for the text objects to be embedded as text. If one of the
       other renderers is used the text becomes rasterised, and hence no text replacement can take place.
       
@@ -473,7 +472,17 @@ matlabfrag(FileName,OPTIONS)
      are written as the power of ten (e.g. 2) and rendered as the 10 to the power of the number (e.g. $10^2$).
      \matlabfrag\ handles this case by detecting whether {\ttfamily xscale} is set to {\ttfamily log}, and
      {\ttfamily xticklabelmode} is set to {\ttfamily auto}. If so, it automatically inserts the appropriate
-     LaTeX code.
+     LaTeX code. A simple example of this behaviour can be shown with the code:
+     \VerbatimInput[firstline=7,lastline=8]{ex15.m}
+     which produces \Figref{ex15}.
+     \begin{figure}[ht]
+       \centering
+       \psfragfig{graphics/ex15}
+       \caption{An example {\ttfamily bodemag} plot demonstrating ticks of the format $10^x$. Note that
+         the axis tick labels are grey. This is due to the {\ttfamily bodemag} function setting them grey
+         using the {\ttfamily xcolor} and {\ttfamily ycolor} axis properties.}
+       \figlabel{ex15}
+     \end{figure}
      
      The above case is fairly simple in comparison to how \matlab\ handles axes that have been scaled by
      a power of ten. For example, if $x\in[0\quad\SI{1}{e-3}]$, then the x ticks would read, say 
@@ -504,10 +513,9 @@ matlabfrag(FileName,OPTIONS)
      
      The inbuilt \matlab\ function {\ttfamily plotyy} can create figures with scaling values while
      manually putting in y tick labels (hence {\ttfamily xticklabelmode} is {\ttfamily auto}).
-     Unfortunately I don't understand how this works (if someone cares to elighten me, please do. My
-     email address appears often in this document.), but by resetting the {\ttfamily xticklabelmode} to
-     {\ttfamily auto} \matlabfrag\ is able to automatically recreate the scaling values. An example of
-     how to do this is given in\par
+     Unfortunately I don't understand how this works (if someone cares to elighten me, please do), but
+     by resetting the {\ttfamily xticklabelmode} to {\ttfamily auto} \matlabfrag\ is able to
+     automatically recreate the scaling values. An example of how to do this is given in\par
      {\verb|examples/ex13.m|}\par\noindent
      and an example output is given in \Figref{ex13}.
      \begin{figure}[ht]
