@@ -38,6 +38,14 @@
 
 function matlabfrag(FileName,varargin)
 
+% Matlab version check
+v = version;
+v = sscanf(v,'%i.%i');
+v = eval( sprintf('%i.%i',v(1),v(2)) );
+if v < 7.4
+  error('matlabfrag:oldMatlab','Matlabfrag requires Matlab r2007a or newer to run');
+end
+
 % Version information is taken from the above help information
 HelpText = help('matlabfrag');
 LatestVersion = regexp(HelpText,'(v[\d\.]+) ([\d]+\-[\w]+\-[\d]+)','tokens');
