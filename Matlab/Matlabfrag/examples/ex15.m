@@ -7,4 +7,4 @@ set(hfig,'position',[pos(1:2),6,4]);
 s = tf('s');
 bodemag(1/(s/100+1));
 %% The following is excluded from userguide
-matlabfrag('graphics/ex15');
+matlabfrag('graphics/ex15','epspad',[0 10 0 0]);
