@@ -30,7 +30,7 @@
 % ylabel('random','fontsize',14);
 % matlabfrag('RandPlot','epspad',[5,0,0,0]);
 %
-% v0.5.0 10-Jun-2009
+% v0.5.1 22-Jun-2009
 %
 % Please report bugs to zebb.prime+matlabfrag@gmail.com
 %
@@ -150,6 +150,16 @@ end
 
 % Hide all of the hidden handles again
 set(0,'showhiddenhandles',hidden);
+
+% Test to see if there is any text
+if isempty( PsfragCmds )
+  warning('matlabfrag:noText',...
+    ['It appears your figure does not contain any text. It is probably\n',...
+     'better to use a function that just exports the figure in this',...
+     'case (e.g.\nthe ''print'' command).\n',...
+     'Matlabfrag will now print the eps file, but not write a tex file.']);
+  return;
+end
 
 % Sort by text size first
 [Y,I] = sortrows(char(PsfragCmds{:,4}));

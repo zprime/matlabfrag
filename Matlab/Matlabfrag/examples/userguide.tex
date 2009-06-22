@@ -486,7 +486,7 @@ matlabfrag(FileName,OPTIONS)
      \end{figure}
      
      The above case is fairly simple in comparison to how \matlab\ handles axes that have been scaled by
-     a power of ten. For example, if $x\in[0\quad\SI{1}{e-3}]$, then the x ticks would read, say 
+     a power of ten. For example, if $x\in[0\quad10^{-3}]$, then the x ticks would read, say 
      $[0\quad0.5\quad1]$, and a $\times10^{-3}$ would be placed to the lower right of the x axis.
      Unfortunately, this $\times10^{-3}$ text object is completely hidden from the user, and as soon as
      the tick labels are modified by the user it disappears. Both \matlabfrag\ and {\ttfamily LaPrint}
