@@ -4,7 +4,7 @@ try
   fh = fopen('userguide.pdf','r');
   pdffile = fread(fh,inf,'uint8=>char').';
   fh = fclose(fh);
-  pdffile = regexprep(pdffile,' GPL','');
+  pdffile = regexprep(pdffile,'GPL\sGhostscript','Ghostscript');
   fh = fopen('userguide.pdf','w');
   fwrite(fh,pdffile);
   fh = fclose(fh);

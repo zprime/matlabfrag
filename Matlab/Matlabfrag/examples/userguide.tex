@@ -2,7 +2,7 @@
 
 \usepackage[T1]{fontenc}\usepackage{lmodern}\usepackage[sc]{mathpazo}\linespread{1.1}% Palatino font
 \usepackage[colorlinks,urlcolor=black,linkcolor=black]{hyperref}
-\usepackage{upquote,fancyvrb,subfig,microtype,sistyle,refstyle}
+\usepackage{upquote,fancyvrb,subfig,microtype,sistyle,refstyle,wasysym}
 \usepackage[process=auto,crop=preview]{pstool}
 
 \newcommand\ytick[1]{\ensuremath{\mathcal R(e^{#1 i})}}
@@ -13,6 +13,7 @@
 \newcommand\matlab{\texorpdfstring{{\sc Matlab}}{Matlab}}
 \newcommand\tex{\texorpdfstring{{\sc .tex}}{.tex}}
 \newcommand\eps{\texorpdfstring{{\sc .eps}}{.eps}}
+\newcommand\pdf{\texorpdfstring{{\sc .pdf}}{.pdf}}
 \def\'#1'{{\ttfamily \textquotesingle #1\textquotesingle}}
 
 % Get rid of that stupid S thing in section references.
@@ -107,6 +108,12 @@ matlabfrag(FileName,OPTIONS)
         \item[{\'handle'}] The handle for the figure to export. The default is {\ttfamily gcf} (`get 
 		  current figure').
         \item[{\'epspad'}] The number of points to pad the output \eps\ file by. The default is {\ttfamily [0,0,0,0]}.
+        \item[{\'renderer'}] The output renderer. The default is {\ttfamily painters}. The renderer is
+          discussed in more detail in \Secref{renderers}.
+        \item[{\'dpi'}] The output resolution (DPI or more appropriately, PPI) of the figure.
+          For the {\ttfamily painters} renderer this makes little difference, but is important when
+          using the {\ttfamily opengl} or {\ttfamily zbuffer} renderers. The default is 300. A
+          discussion of renderers is given in \Secref{renderers}.
       \end{itemize}
       Some examples are given below.\nobreak
       \VerbatimInput[firstline=7,lastline=12]{ex01.m}
@@ -448,23 +455,52 @@ matlabfrag(FileName,OPTIONS)
     \section{Advanced usage: a discussion on renderers}\seclabel{renderers}%
       \matlab\ has three different renderers that it uses to render a graphic on screen; {\ttfamily Painters},
       {\ttfamily OpenGL}, and {\ttfamily Z-Buffer}. Of these, only the {\ttfamily Painters} renderer can export
-      an image in a vector format which is needed for the text objects to be embedded as text. If one of the
-      other renderers is used the text becomes rasterised, and hence no text replacement can take place.
+      an image in a native text format which is needed for the text substitution process. If one of the
+      other renderers is used the text becomes rasterised, and hence normally no text replacement can take place.
       
-      During the export process, \matlabfrag\ causes the \eps\ file to be printed using the {\ttfamily Painters}
-      renderer, which in certain complicated cases can cause a difference between the image on-screen and that
-      printed.
+      As of \matlabfrag\ {\ttfamily v0.6.0}, an {\ttfamily EXPORTFIG} and {\ttfamily epscombine} style hack
+      has been included, which manually places text objects inside rasterised \eps\ images. The result of this
+      is that text can now be substituted with LaTeX font and code, but also that all the text now appears
+      in the foreground (i.e. all text appears in front of the image, regardless of its placement in the
+      original image).
       
-      Complicated graphics printed using the {\ttfamily Painters} renderer will sometimes be quite large. This
-      is usually not a problem as they are usually compressed quite efficiently when converted to {\sc pdf}.
+      A downside to placing a rasterised image inside an \eps\ file is that it is uncompressed, which creates
+      a very large \eps\ file. During the conversion to {\ttfamily pdf} the image is compressed to a {\ttfamily jpeg}
+      file (unfortunately it can't be compressed to a {\ttfamily png} file using {\ttfamily ps2pdf} to my
+      knowledge), so it is reduced to a reasonable file size (at the expense of some image quality).
       
-      If you manually select a renderer that is not {\ttfamily Painters}, \matlabfrag\ will issue a warning
-      explaining the problem.
-    
-      If you require either the {\ttfamily OpenGL} or the {\ttfamily Z-Buffer} renderer, please email me at\par
-      {\ttfamily zebb.prime+matlabfrag@gmail.com}\par\noindent
-      asking for support for them in \matlabfrag. If I get enough requests, I will attempt to work in some
-      sort of {\ttfamily epscombine} hack.
+      When printing a rasterised image, the resolution is set using the {\ttfamily dpi} option in \matlabfrag.
+      The default is 300, which is print quality.
+      
+      By default \matlabfrag\ will use the {\ttfamily Painters} renderer unless either the figure has had
+      the renderer manually set (which causes the {\ttfamily renderermode} property to become {\ttfamily manual}),
+      or the {\ttfamily renderer} option is set in \matlabfrag.
+      
+      An example of choosing the renderer in \matlabfrag, and increasing the image DPI is given in
+      \par{\verb|examples/ex16.m|}\par\noindent
+      an extract of which is:
+      \VerbatimInput[firstline=7,lastline=12]{ex16.m}
+      The output for this example is given in \Figref{ex16}.
+      \begin{figure}[ht]
+        \centering
+        \psfragfig{graphics/ex16}
+        \caption{Example showing the use of the {\ttfamily OpenGL} renderer.}
+        \figlabel{ex16}
+      \end{figure}
+      
+      An example showing \matlabfrag\ detecting a manually set renderer is given in
+      \par{\verb|examples/ex17.m|}\par\noindent
+      which is largely based off of the ``Moving the Camera Through a Scene'' example in the \matlab\
+      documentation. An extract of this example is:
+      \VerbatimInput[firstline=40,lastline=44]{ex17.m}
+      The output from this example is given in \Figref{ex17}.
+      \begin{figure}[ht]
+        \centering
+        \psfragfig{graphics/ex17}
+        \caption{Example output when the renderer is set to {\ttfamily zbuffer} and shading set to
+        {\ttfamily phong}.}
+        \figlabel{ex17}
+      \end{figure}
       
    \section{Advanced usage: a discussion on axis ticks}\seclabel{adv-axis}%
      Easily the hardest part about writing \matlabfrag\ has been dealing with axis ticks. Their positioning
@@ -517,7 +553,7 @@ matlabfrag(FileName,OPTIONS)
      Unfortunately I don't understand how this works (if someone cares to elighten me, please do), but
      by resetting the {\ttfamily xticklabelmode} to {\ttfamily auto} \matlabfrag\ is able to
      automatically recreate the scaling values. An example of how to do this is given in\par
-     {\verb|examples/ex13.m|}\par\noindent
+     {\verb|example/ex13.m|}\par\noindent
      and an example output is given in \Figref{ex13}.
      \begin{figure}[ht]
        \centering
