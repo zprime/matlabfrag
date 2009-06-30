@@ -19,8 +19,14 @@
 %    'handle'      | Figure to create the .eps and .tex files from.
 %                  |  default is gcf (current figure handle)
 %    'epspad'      | [Left,Bottom,Right,Top] - Pad the eps figure by
-%                  | the number of points in the input vector. Default
-%                  | is [0,0,0,0].
+%                  |  the number of points in the input vector. Default
+%                  |  is [0,0,0,0].
+%    'renderer'    | ['painters','opengl','zbuffer'] - The renderer used
+%                  |  to generate the figure. The default is 'painters'.
+%                  |  If you have manually specified the renderer,
+%                  |  matlabfrag will use this value.
+%    'dpi'         | DPI to print the images at. Default is 300. Note that
+%                  |  this option has little effect when using 'painters'
 %
 % EXAMPLE
 % plot(1:10,rand(1,10));
@@ -30,7 +36,7 @@
 % ylabel('random','fontsize',14);
 % matlabfrag('RandPlot','epspad',[5,0,0,0]);
 %
-% v0.5.1 22-Jun-2009
+% v0.6.0 30-Jun-2009
 %
 % Please report bugs to zebb.prime+matlabfrag@gmail.com
 %
@@ -58,6 +64,8 @@ TEXHDR = sprintf('%% Generated using matlabfrag\n%% Version: %s\n%% Version Date
 % Global macros
 REPLACEMENT_FORMAT = '%03d';
 USERDATA_PREFIX = 'matlabfrag:';
+REPLACEMENT_SIZE = 10;
+REPLACEMENT_FONT = 'courier';
 
 p = inputParser;
 p.FunctionName = 'matlabfrag';
@@ -65,6 +73,9 @@ p.FunctionName = 'matlabfrag';
 p.addRequired('FileName', @(x) ischar(x) );
 p.addOptional('handle', gcf, @(x) ishandle(x) && strcmpi(get(x,'Type'),'figure') );
 p.addOptional('epspad', [0,0,0,0], @(x) isnumeric(x) && (all(size(x) == [1 4])) );
+p.addOptional('renderer', 'painters', ...
+    @(x) any( strcmpi(x,{'painters','opengl','zbuffer'}) ) );
+p.addOptional('dpi', 300, @(x) isnumeric(x) )
 p.parse(FileName,varargin{:});
 
 Actions = {};
@@ -89,22 +100,6 @@ SetUnsetProperties(p.Results.handle,'PaperUnits','centimeters',...
 hidden = get(0,'showhiddenhandles');
 set(0,'showhiddenhandles','on');
 
-% Perform a test to see which renderer is used
-renderer = get(p.Results.handle,'renderer');
-renderermode = get(p.Results.handle,'renderermode');
-if strcmpi(renderermode,'manual') && ~strcmpi('renderer','painters')
-  warning('matlabfrag:renderer',...
-    ['\nLooks like you have manually selected the %s renderer.\n',...
-    'This does not work with Matlabfrag because the text in the\n',...
-    'output eps is rasterised. Matlabfrag will use the painters\n',...
-    'renderer during the export which may cause image problems.\n',...
-    'If you would like support for the Z-buffer or OpenGL rend-\n',...
-    'erers in the future, please email me expressing your inter-\n',...
-    'est for this feature at zebb.prime+matlabfrag@gmail.com,\n',...
-    'and I will consider adding it using some sort of epscombine\n',...
-    'hack.'],renderer);
-end
-
 % Process the picture
 ProcessFigure(p.Results.handle);
 
@@ -125,8 +120,22 @@ else
   FileName = namestr;
 end
 
-% Export the image to an eps file
-print('-depsc2','-loose','-painters',FileName);
+dpiswitch = ['-r',num2str( round( p.Results.dpi ) )];
+% Unless over-ridden, check to see if 'renderermode' is 'manual'
+renderer = p.Results.renderer;
+if any( strcmpi(p.UsingDefaults,'renderer') )
+  if strcmpi(get(p.Results.handle,'renderermode'),'manual')
+    renderer = get(p.Results.handle,'renderer');
+  end
+end
+
+if strcmpi(renderer,'painters')
+  % Export the image to an eps file
+  print(p.Results.handle,'-depsc2','-loose',dpiswitch,'-painters',FileName);
+else
+  % If using the opengl or zbuffer renderer
+  EpsCombine(p.Results.handle,renderer,FileName,dpiswitch)
+end
 
 % Pad the eps if requested
 if any( p.Results.epspad )
@@ -195,11 +204,6 @@ try
   CurrentAngle = 0;
   CurrentlyFixedWidth = 0;
   CurrentType = PsfragCmds{1,9};
-  if ~isempty(regexpi(CurrentType,'tick'))
-    TickType = 1;
-  else
-    TickType = 0;
-  end
   fprintf(fid,'\n%%\n%%%% <%s>',CurrentType);
   for ii=1:size(PsfragCmds,1)
     % Test to see if the font size has changed
@@ -232,11 +236,6 @@ try
       fprintf(fid,'\n%%\n%%%% </%s>',CurrentType);
       CurrentType = PsfragCmds{ii,9};
       fprintf(fid,'\n%%\n%%%% <%s>',CurrentType);
-      if ~isempty(regexpi(CurrentType,'tick'))
-        TickType = 1;
-      else
-        TickType = 0;
-      end
       if ~NewFontStyle
         fprintf(fid,'\n%%');
       end
@@ -258,11 +257,7 @@ try
     fprintf(fid,'\n\\psfrag{%s}',PsfragCmds{ii,2});
     % Only put in positioning information if it is not [bl] aligned
     if ~strcmp(PsfragCmds{ii,3},'bl') || ~strcmp(PsfragCmds{ii,3},'lb')
-      if TickType
-        fprintf(fid,'[%s][%s]',PsfragCmds{ii,3},PsfragCmds{ii,3});
-      else
-        fprintf(fid,'[%s][bl]',PsfragCmds{ii,3});
-      end
+      fprintf(fid,'[%s][%s]',PsfragCmds{ii,3},PsfragCmds{ii,3});
     end
     fprintf(fid,'{\\%s%s %s}%%',FontStylePrefix,...
       char(FontStyleId),RemoveSpaces(PsfragCmds{ii,1}));
@@ -271,13 +266,12 @@ try
 
   fclose(fid);
 
-catch
+catch err
   if fid > 0
     fclose(fid);
   end
-  err = lasterror;
   err.stack.line
-  rethrow(lasterror);
+  rethrow(err);
 end
 % All done! Below are the sub-functions
 
@@ -295,6 +289,8 @@ end
     end
   end
 
+% Freeze
+
 % Process a text handle, extracting the appropriate data
 %  and creating 'action' functions
   function ProcessText(handle)
@@ -302,6 +298,7 @@ end
     String = get(handle,'string');
     UserData = get(handle,'UserData');
     UserString = {};
+    Pos = get(handle,'Position');
     % Test to see if the text is visible. If not, return.
     if strcmpi(get(handle,'visible'),'off'); return; end;
     % Process the strings alignment options
@@ -346,7 +343,8 @@ end
     [FontSize,FontAngle,FontWeight,FixedWidth] = CommonOptions(handle);
     % Assign a replacement action for the string
     CurrentReplacement = ReplacementString();
-    SetUnsetProperties(handle,'String',CurrentReplacement);
+    SetUnsetProperties(handle,'String',CurrentReplacement,...
+      'fontsize',REPLACEMENT_SIZE,'fontname',REPLACEMENT_FONT);
     % Check for a 'UserData' property, which replaces the string with latex
     if ~isempty(UserString)
       String = cell2mat(UserString{:});
@@ -356,11 +354,8 @@ end
       SetUnsetProperties(handle,'interpreter','none');
     end
     % Make sure the final position is the same as the original one
-    Pos = get(handle,'Position');
     AddAction( @() set(handle,'position',Pos) );
 
-    % Now set the horizontal alignment to 'bl'
-    SetUnsetProperties(handle,'VerticalAlignment','bottom','HorizontalAlignment','left');
     % Get the text colour
     Colour = get(handle,'color');
     % Finally create the replacement command
@@ -372,18 +367,25 @@ end
 %  Don't do anything if it is a legend
   function ProcessTicks(handle)
     % Return if nothing to do.
-    if strcmpi(get(handle,'tag'),'legend'); return; end;
     if strcmpi(get(handle,'visible'),'off'); return; end;
     % Make sure figure doesn't resize itself while we are messing with it.
     SetUnsetProperties(handle,'OuterPosition', get(handle,'OuterPosition') );
     SetUnsetProperties(handle,'ActivePositionProperty','Position');
     SetUnsetProperties(handle,'Position', get(handle,'Position') );
+    % Fixing the axes is all that is required for a legend
+    if strcmpi(get(handle,'tag'),'legend'); return; end;
     % Extract common options.
     [FontSize,FontAngle,FontWeight,FixedWidth] = CommonOptions(handle);
+    FontName = get(handle,'fontname');
+    % Change the font
     for jj = ['x' 'y' 'z']
       AutoTick = strcmpi(get(handle,[jj,'tickmode']),'auto');
       AutoTickLabel = strcmpi(get(handle,[jj,'ticklabelmode']),'auto');
       ticklabels = get(handle,[jj,'ticklabel']);
+      ticks = get(handle,[jj,'tick']);
+      set(handle,[jj,'tickmode'],'manual',[jj,'ticklabelmode'],'manual');
+      SetUnsetProperties(handle,'FontSize',REPLACEMENT_SIZE,...
+        'FontName',REPLACEMENT_FONT);
       if ~isempty(ticklabels)
         tickcolour = get(handle,[jj,'color']);
 
@@ -399,7 +401,6 @@ end
 
           % Test to see if there is a common factor
         elseif strcmpi(get(handle,[jj,'scale']),'linear') && AutoTick && AutoTickLabel
-          ticks = get(handle,[jj,'tick']);
           for kk=1:size(ticklabels,1)
             % Find the first non-NaN ratio between tick labels and tick
             % values
@@ -430,16 +431,20 @@ end
               % X axis scale
               if strcmpi(jj,'x')
                 if strcmpi(XAlignment,'bottom');
-                  ht = text(Xlims(2),Ylims(1),CurrentReplacement,'fontsize',FontSize);
+                  ht = text(Xlims(2),Ylims(1),CurrentReplacement,...
+                    'fontsize',FontSize,'fontname',FontName,...
+                    'HorizontalAlignment','center','VerticalAlignment','top');
                   extent = get(ht,'extent');
                   position = get(ht,'position');
-                  set(ht,'position',[position(1) position(2)-0.6*extent(4) position(3)]);
+                  set(ht,'position',[position(1) position(2)-1.0*extent(4) position(3)]);
                   Alignment = 'tc';
                 else
-                  ht = text(Xlims(2),Ylims(2),CurrentReplacement,'fontsize',FontSize);
+                  ht = text(Xlims(2),Ylims(2),CurrentReplacement,...
+                    'fontsize',FontSize,'fontname',FontName,...
+                    'HorizontalAlignment','center','VerticalAlignment','bottom');
                   extent = get(ht,'extent');
                   position = get(ht,'position');
-                  set(ht,'position',[position(1) position(2)+1.2*extent(4) position(3)]);
+                  set(ht,'position',[position(1) position(2)+1.0*extent(4) position(3)]);
                   Alignment = 'bc';
                 end
 
@@ -447,26 +452,35 @@ end
               else
                 if strcmpi(XAlignment,'bottom')
                   if strcmpi(YAlignment,'left')
-                    ht = text(Xlims(1),Ylims(2),CurrentReplacement,'fontsize',FontSize);
+                    ht = text(Xlims(1),Ylims(2),CurrentReplacement,...
+                    'fontsize',FontSize,'fontname',FontName,...
+                    'HorizontalAlignment','center','VerticalAlignment','bottom');
                   else
-                    ht = text(Xlims(2),Ylims(2),CurrentReplacement,'fontsize',FontSize);
+                    ht = text(Xlims(2),Ylims(2),CurrentReplacement,...
+                    'fontsize',FontSize,'fontname',FontName,...
+                    'HorizontalAlignment','center','VerticalAlignment','bottom');
                   end
                   extent = get(ht,'extent');
                   position = get(ht,'position');
-                  set(ht,'position',[position(1) position(2)+0.8*extent(4) position(3)]);
+                  set(ht,'position',[position(1) position(2)+0.5*extent(4) position(3)]);
                   Alignment = 'bc';
                 else
                   if strcmpi(YAlignment,'left')
-                    ht = text(Xlims(1),Ylims(1),CurrentReplacement,'fontsize',FontSize);
+                    ht = text(Xlims(1),Ylims(1),CurrentReplacement,...
+                    'fontsize',FontSize,'fontname',FontName,...
+                    'HorizontalAlignment','center','VerticalAlignment','top');
                   else
-                    ht = text(Xlims(2),Ylims(1),CurrentReplacement,'fontsize',FontSize);
+                    ht = text(Xlims(2),Ylims(1),CurrentReplacement,...
+                    'fontsize',FontSize,'fontname',FontName,...
+                    'HorizontalAlignment','center','VerticalAlignment','top');
                   end
                   extent = get(ht,'extent');
                   position = get(ht,'position');
-                  set(ht,'position',[position(1) position(2)-0.2*extent(4) position(3)]);
+                  set(ht,'position',[position(1) position(2)-0.5*extent(4) position(3)]);
                   Alignment = 'tc';
                 end
               end
+              set(ht,'fontsize',REPLACEMENT_SIZE,'fontname',REPLACEMENT_FONT);
 
               % Restore gca
               set(p.Results.handle,'CurrentAxes',hCA);
@@ -497,17 +511,22 @@ end
                   ht = text(Xlim(1)+0.6*axlen(Xlim),...
                     Ylim(1)-0.3*axlen(Ylim),...
                     Zlim(1),...
-                    CurrentReplacement);
+                    CurrentReplacement,'fontsize',REPLACEMENT_SIZE,...
+                      'fontname',REPLACEMENT_FONT);
                   Alignment = 'bl';
                 case 'y'
                   ht = text(Xlim(1)-0.3*axlen(Xlim),...
                     Ylim(1)+0.6*axlen(Ylim),...
                     Zlim(1),...
-                    CurrentReplacement);
+                    CurrentReplacement,'fontsize',REPLACEMENT_SIZE,...
+                      'fontname',REPLACEMENT_FONT,'horizontalalignment',...
+                      'right');
                   Alignment = 'br';
                 case 'z'
                   ht = text(Xlim(1),Ylim(2),Zlim(2)+0.2*axlen(Zlim),...
-                    CurrentReplacement);
+                    CurrentReplacement,'fontsize',REPLACEMENT_SIZE,...
+                       'fontname',REPLACEMENT_FONT,'horizontalalignment',...
+                       'right');
                   Alignment = 'br';
                 otherwise
                   error('matlabfrag:wtf',['Bad axis; this error shouldn''t happen.\n',...
@@ -710,4 +729,78 @@ end
     end
   end
 
+% Print two versions of the file, one renderered with the renderer of
+% choice, and another rendererd with painters. Then perform some epscombine
+% magic to recombine them.
+  function EpsCombine(handle,renderer,filename,dpiswitch)
+    tmp_file = tempname;
+    ht = findobj(handle,'type','text');
+    ht = findobj(ht,'visible','on');
+    ha = findobj(handle,'type','axes');
+    % Make the text invisible
+    set(ht,'visible','off');
+    hnam = @(x) ['h',num2str(x)];
+    for jj=1:length(ha)
+      tickvals.(hnam(jj)).xtl = get(ha(jj),'xticklabel');
+      tickvals.(hnam(jj)).ytl = get(ha(jj),'yticklabel');
+      tickvals.(hnam(jj)).ztl = get(ha(jj),'zticklabel');
+      set(ha(jj),'xticklabel','','yticklabel','','zticklabel','');
+    end
+    % Now print it.
+    print(handle,'-depsc2','-loose',dpiswitch,...
+      ['-',renderer],filename);
+    % Restore the text
+    set(ht,'visible','on');
+    for jj=1:length(ha)
+      set(ha(jj),'xticklabel',tickvals.(hnam(jj)).xtl);
+      set(ha(jj),'yticklabel',tickvals.(hnam(jj)).ytl);
+      set(ha(jj),'zticklabel',tickvals.(hnam(jj)).ztl);
+    end
+    % Now print a painters version.
+    print(handle,'-depsc2','-loose',dpiswitch,...
+      '-painters',tmp_file);
+    % Open it up and extract the text
+    try
+      fh = fopen([tmp_file,'.eps'],'r');
+      paintersfile = fread(fh,inf,'uint8=>char').';
+      fh = fclose(fh);
+    catch err
+      if fh
+        fh = close(fh);
+      end
+      rethrow(err);
+    end
+    delete([tmp_file,'.eps']);
+    textobjs = regexpi(paintersfile,'-?[0-9]+\s+-?[0-9]+\s+mt\s+\(.+?\)\s+s','match');
+    texthdr = regexpi(paintersfile,'%%IncludeResource:\s+font.*?\n.?\n','match');
+    texthdr = texthdr{1};
+    % Open up the target file, and read the contents.
+    try
+      fh = fopen([filename,'.eps'],'r');
+      epsfile = fread(fh,inf,'uint8=>char').';
+      fh = fclose(fh);
+    catch err
+      if fh
+        fh = close(fh);
+      end
+      rethrow(err);
+    end
+    % Insert the new text
+    findex = regexp(epsfile,'end %%Color Dict');
+    epsfile = sprintf('%s%s\n\n%s\n%s',...
+      epsfile(1:findex-1),texthdr,...
+      sprintf('%s\n\n',textobjs{:}),...
+      epsfile(findex:end));
+    try
+      fh = fopen([filename,'.eps'],'w');
+      fwrite(fh,epsfile);
+      fh = fclose(fh);
+    catch err
+      if fh
+        fh = fclose(fh);
+      end
+      rethrow(err);
+    end
+  end
+    
 end % of matlabfrag(FileName,p.Results.handle)
