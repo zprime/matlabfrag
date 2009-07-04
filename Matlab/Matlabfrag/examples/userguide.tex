@@ -409,6 +409,8 @@ matlabfrag(FileName,OPTIONS)
 	    \begin{enumerate}
 	      \item Check that all LaTeX statements in your figure are valid. If you are having problems, try a
 	        simple example that is known to work.
+	      \item If you have manually loaded the {\ttfamily graphicx} package, make sure you don't have a
+	        driver (e.g. {\ttfamily pdftex}) specified.
 	      \item If using pdfLaTeX and \pstoolname, check:
 	      \begin{enumerate}
 	        \item \verb|-shell-escape| option is set when calling pdfLaTeX.
@@ -433,6 +435,8 @@ matlabfrag(FileName,OPTIONS)
 
     \subsection{My graphic exports from \matlab\ and compiles in LaTeX/\texorpdfstring{\\}{}pdfLaTeX/LyX but doesn't look right!}
       \begin{enumerate}
+      \item If you use a {\ttfamily includegraphics} option such as {\ttfamily rotate}, there is a bug
+	      in \pstoolname\ prior to v1.2b that caused the option to be applied twice.
       \item The text is running over lines or is cut out!
       \begin{enumerate}
         \item This most likely happens if you resize the image in LaTeX using a \verb|[width=x]| argument.
@@ -479,7 +483,7 @@ matlabfrag(FileName,OPTIONS)
       An example of choosing the renderer in \matlabfrag, and increasing the image DPI is given in
       \par{\verb|examples/ex16.m|}\par\noindent
       an extract of which is:
-      \VerbatimInput[firstline=7,lastline=12]{ex16.m}
+      \VerbatimInput[firstline=7,lastline=15]{ex16.m}
       The output for this example is given in \Figref{ex16}.
       \begin{figure}[ht]
         \centering

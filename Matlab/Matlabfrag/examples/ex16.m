@@ -6,8 +6,11 @@ set(hfig,'position',[pos(1:2),8,6]);
 %% Everything below appears in userguide
 peaks;
 hs = get(gca,'children');
-set(hs,'facealpha',0.5);
+set(hs,'facealpha',0.4,'edgealpha',0.4);
 hl=legend('legend');
 set(hl,'location','northeast');
+xlabel('X','userdata','matlabfrag:$\mathrm X$');
+ylabel('Y','userdata','matlabfrag:$\mathbf Y$');
+zlabel('Z','userdata','matlabfrag:$\mathcal Z$')
 matlabfrag('graphics/ex16','renderer','opengl','dpi',720);
 %% The following is excluded from userguide
