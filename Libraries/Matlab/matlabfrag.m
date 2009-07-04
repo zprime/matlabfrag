@@ -36,7 +36,7 @@
 % ylabel('random','fontsize',14);
 % matlabfrag('RandPlot','epspad',[5,0,0,0]);
 %
-% v0.6.0 30-Jun-2009
+% v0.6.1 04-Jul-2009
 %
 % Please report bugs to zebb.prime+matlabfrag@gmail.com
 %
@@ -67,6 +67,9 @@ USERDATA_PREFIX = 'matlabfrag:';
 REPLACEMENT_SIZE = 10;
 REPLACEMENT_FONT = 'courier';
 
+% Debug macro levels
+KEEP_TEMPFILE = 1;
+
 p = inputParser;
 p.FunctionName = 'matlabfrag';
 
@@ -75,7 +78,8 @@ p.addOptional('handle', gcf, @(x) ishandle(x) && strcmpi(get(x,'Type'),'figure')
 p.addOptional('epspad', [0,0,0,0], @(x) isnumeric(x) && (all(size(x) == [1 4])) );
 p.addOptional('renderer', 'painters', ...
     @(x) any( strcmpi(x,{'painters','opengl','zbuffer'}) ) );
-p.addOptional('dpi', 300, @(x) isnumeric(x) )
+p.addOptional('dpi', 300, @(x) isnumeric(x) );
+p.addOptional('debuglvl',0, @(x) isnumeric(x) && x>=0);
 p.parse(FileName,varargin{:});
 
 Actions = {};
@@ -134,7 +138,8 @@ if strcmpi(renderer,'painters')
   print(p.Results.handle,'-depsc2','-loose',dpiswitch,'-painters',FileName);
 else
   % If using the opengl or zbuffer renderer
-  EpsCombine(p.Results.handle,renderer,FileName,dpiswitch)
+  EpsCombine(p.Results.handle,renderer,FileName,dpiswitch,...
+    p.Results.debuglvl>=KEEP_TEMPFILE)
 end
 
 % Pad the eps if requested
@@ -281,24 +286,32 @@ end
     % Dispatcher to different processing types
     axeshandles = findobj(parent,'Type','axes');
     texthandles = findobj(parent,'Type','text');
+    textpos = GetTextPos(texthandles);
+    % Freeze all axes, and process ticks.
     for jj=1:length(axeshandles)
       ProcessTicks(axeshandles(jj));
     end
+    % Process all text.
     for jj=1:length(texthandles)
-      ProcessText(texthandles(jj));
+      ProcessText(texthandles(jj),textpos{jj});
     end
   end
 
-% Freeze
+% Get all fo the text object's positions.
+  function TextPos = GetTextPos(texthandles)
+    TextPos = cell(1,length(texthandles));
+    for jj=1:length(texthandles)
+      TextPos{jj} = get(texthandles(jj),'position');
+    end
+  end
 
 % Process a text handle, extracting the appropriate data
 %  and creating 'action' functions
-  function ProcessText(handle)
+  function ProcessText(handle,Pos)
     % Get some of the text properties.
     String = get(handle,'string');
     UserData = get(handle,'UserData');
     UserString = {};
-    Pos = get(handle,'Position');
     % Test to see if the text is visible. If not, return.
     if strcmpi(get(handle,'visible'),'off'); return; end;
     % Process the strings alignment options
@@ -377,6 +390,7 @@ end
     % Extract common options.
     [FontSize,FontAngle,FontWeight,FixedWidth] = CommonOptions(handle);
     FontName = get(handle,'fontname');
+    set(handle,'fontname',REPLACEMENT_FONT,'fontsize',REPLACEMENT_SIZE);
     % Change the font
     for jj = ['x' 'y' 'z']
       AutoTick = strcmpi(get(handle,[jj,'tickmode']),'auto');
@@ -384,8 +398,6 @@ end
       ticklabels = get(handle,[jj,'ticklabel']);
       ticks = get(handle,[jj,'tick']);
       set(handle,[jj,'tickmode'],'manual',[jj,'ticklabelmode'],'manual');
-      SetUnsetProperties(handle,'FontSize',REPLACEMENT_SIZE,...
-        'FontName',REPLACEMENT_FONT);
       if ~isempty(ticklabels)
         tickcolour = get(handle,[jj,'color']);
 
@@ -732,8 +744,12 @@ end
 % Print two versions of the file, one renderered with the renderer of
 % choice, and another rendererd with painters. Then perform some epscombine
 % magic to recombine them.
-  function EpsCombine(handle,renderer,filename,dpiswitch)
-    tmp_file = tempname;
+  function EpsCombine(handle,renderer,filename,dpiswitch,keep_tempfile)
+    if keep_tempfile
+      tmp_file = [filename,'-painters'];
+    else
+      tmp_file = tempname;
+    end
     ht = findobj(handle,'type','text');
     ht = findobj(ht,'visible','on');
     ha = findobj(handle,'type','axes');
@@ -770,8 +786,14 @@ end
       end
       rethrow(err);
     end
-    delete([tmp_file,'.eps']);
-    textobjs = regexpi(paintersfile,'-?[0-9]+\s+-?[0-9]+\s+mt\s+\(.+?\)\s+s','match');
+    if ~keep_tempfile 
+      delete([tmp_file,'.eps']);
+    end
+    textobjs = regexpi(paintersfile,...
+      ['-?\d+\s+-?\d+\s+mt(\s+-?\d+\s+rotate)?',...
+      '\s+\(.+?\)\s+s',...
+      '(\s+-?\d+\s+rotate)?'],...
+      'match');
     texthdr = regexpi(paintersfile,'%%IncludeResource:\s+font.*?\n.?\n','match');
     texthdr = texthdr{1};
     % Open up the target file, and read the contents.
