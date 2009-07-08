@@ -11,6 +11,6 @@ hl=legend('legend');
 set(hl,'location','northeast');
 xlabel('X','userdata','matlabfrag:$\mathrm X$');
 ylabel('Y','userdata','matlabfrag:$\mathbf Y$');
-zlabel('Z','userdata','matlabfrag:$\mathcal Z$')
+zlabel('Z','fontsize',12,'userdata','matlabfrag:$\mathcal Z$')
 matlabfrag('graphics/ex16','renderer','opengl','dpi',720);
 %% The following is excluded from userguide
