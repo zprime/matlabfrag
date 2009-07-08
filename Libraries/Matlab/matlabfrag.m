@@ -36,7 +36,7 @@
 % ylabel('random','fontsize',14);
 % matlabfrag('RandPlot','epspad',[5,0,0,0]);
 %
-% v0.6.2 07-Jul-2009
+% v0.6.2 08-Jul-2009
 %
 % Please report bugs to zebb.prime+matlabfrag@gmail.com
 %
@@ -64,12 +64,11 @@ TEXHDR = sprintf('%% Generated using matlabfrag\n%% Version: %s\n%% Version Date
 % Global macros
 REPLACEMENT_FORMAT = '%03d';
 USERDATA_PREFIX = 'matlabfrag:';
-REPLACEMENT_SIZE = 10;
-REPLACEMENT_FONT = 'courier';
 
 % Debug macro levels
 KEEP_TEMPFILE = 1;
 PAUSE_BEFORE_PRINT = 2;
+PAUSE_AFTER_PRINT = 2;
 STEP_THROUGH_ACTIONS = 3;
 
 p = inputParser;
@@ -111,10 +110,12 @@ ProcessFigure(p.Results.handle);
 
 % Apply the actions resulting from the processing
 if p.Results.debuglvl >= STEP_THROUGH_ACTIONS
+  disp('Starting to apply actions');
   for ii=1:length(Actions)
     Actions{ii}();
     pause;
   end
+  disp('Finished applying actions');
 else
   for ii=1:length(Actions)
     Actions{ii}();
@@ -122,6 +123,7 @@ else
 end
 
 if p.Results.debuglvl >= PAUSE_BEFORE_PRINT
+  disp('Paused before printing');
   pause;
 end
 
@@ -155,6 +157,11 @@ else
     p.Results.debuglvl>=KEEP_TEMPFILE)
 end
 
+if p.Results.debuglvl >= PAUSE_AFTER_PRINT
+  disp('Paused after printing');
+  pause;
+end
+
 % Pad the eps if requested
 if any( p.Results.epspad )
   fh = fopen([FileName,'.eps'],'r');
@@ -172,10 +179,12 @@ end
 % Apply the undo action to restore the image to how
 %  was originally
 if p.Results.debuglvl >= STEP_THROUGH_ACTIONS
+  disp('Starting to apply undo actions');
   for ii=1:length(UndoActions)
     UndoActions{ii}();
     pause;
   end
+  disp('Finished applying undo actions');
 else
   for ii=1:length(UndoActions)
     UndoActions{ii}();
@@ -215,8 +224,8 @@ PsfragCmds = PsfragCmds(I,:);
 PsfragCmds = PsfragCmds(I,:);
 clear Y
 
+% Finally write the latex-file
 try
-  % Finally write the latex-file
   fid = fopen([FileName,'.tex'],'w');
   fwrite(fid,TEXHDR);
 
@@ -377,12 +386,7 @@ end
     [FontSize,FontAngle,FontWeight,FixedWidth] = CommonOptions(handle);
     % Assign a replacement action for the string
     CurrentReplacement = ReplacementString();
-    if strcmpi(get(get(handle,'parent'),'tag'),'legend')
-      SetUnsetProperties(handle,'String',CurrentReplacement);
-    else
-      SetUnsetProperties(handle,'String',CurrentReplacement,...
-        'fontsize',REPLACEMENT_SIZE,'fontname',REPLACEMENT_FONT);
-    end
+    SetUnsetProperties(handle,'String',CurrentReplacement);
     % Check for a 'UserData' property, which replaces the string with latex
     if ~isempty(UserString)
       String = cell2mat(UserString{:});
@@ -406,26 +410,29 @@ end
   function ProcessTicks(handle)
     % Return if nothing to do.
     if strcmpi(get(handle,'visible'),'off'); return; end;
+    % If legend, freeze the axes and return.
+    if strcmpi(get(handle,'tag'),'legend');
+      SetUnsetProperties(handle,'OuterPosition', get(handle,'OuterPosition') );
+      SetUnsetProperties(handle,'ActivePositionProperty','OuterPosition');
+      SetUnsetProperties(handle,'Position', get(handle,'Position') );
+      return;
+    end;
     % Make sure figure doesn't resize itself while we are messing with it.
     for jj=['x' 'y' 'z']
       AutoTick.(jj) = strcmpi(get(handle,[jj,'tickmode']),'auto');
       AutoTickLabel.(jj) = strcmpi(get(handle,[jj,'ticklabelmode']),'auto');
     end
-    SetUnsetProperties(handle,'xlimmode','manual','ylimmode','manual','zlimmode','manual');
-    SetUnsetProperties(handle,'xtickmode','manual','ytickmode','manual',...
-      'ztickmode','manual');
-    SetUnsetProperties(handle,'xticklabelmode','manual','yticklabelmode',...
-      'manual','zticklabelmode','manual');
     SetUnsetProperties(handle,'OuterPosition', get(handle,'OuterPosition') );
     SetUnsetProperties(handle,'ActivePositionProperty','Position');
     SetUnsetProperties(handle,'Position', get(handle,'Position') );
-    % Fixing the axes is all that is required for a legend
-    if strcmpi(get(handle,'tag'),'legend'); return; end;
-    % Try and disable legend listeners
-    TryDisableLegendListeners(handle);
+    SetUnsetProperties(handle,'xticklabelmode','manual','yticklabelmode',...
+      'manual','zticklabelmode','manual');
+    SetUnsetProperties(handle,'xlimmode','manual','ylimmode','manual','zlimmode','manual');
+    SetUnsetProperties(handle,'xtickmode','manual','ytickmode','manual',...
+      'ztickmode','manual');
     % Extract common options.
     [FontSize,FontAngle,FontWeight,FixedWidth] = CommonOptions(handle);
-    SetUnsetProperties(handle,'fontname',REPLACEMENT_FONT,'fontsize',REPLACEMENT_SIZE);
+    FontName = get(handle,'fontname');
     % Change the font
     for jj = ['x' 'y' 'z']
       ticklabels = get(handle,[jj,'ticklabel']);
@@ -440,8 +447,7 @@ end
           ticklabelcell = mat2cell(ticklabels,ones(1,size(ticklabels,1)),size(ticklabels,2));
           if all(~isnan(str2double(ticklabelcell)))
             % If so, make the labels read 10^<TickLabel>
-            ticklabels = strcat(ones(size(ticklabels,1),1)*'$10^{',ticklabels,...
-              ones(size(ticklabels,1),1)*'}$');
+            ticklabels = cellfun(@(x) ['$10^{',x,'}$'], ticklabelcell,'uniformoutput',0);
           end
 
           % Test to see if there is a common factor
@@ -477,7 +483,7 @@ end
               if strcmpi(jj,'x')
                 if strcmpi(XAlignment,'bottom');
                   ht = text(Xlims(2),Ylims(1),CurrentReplacement,...
-                    'fontsize',REPLACEMENT_SIZE,'fontname',REPLACEMENT_FONT,...
+                    'fontsize',FontSize,'fontname',FontName,...
                     'HorizontalAlignment','center','VerticalAlignment','top');
                   extent = get(ht,'extent');
                   position = get(ht,'position');
@@ -485,7 +491,7 @@ end
                   Alignment = 'tc';
                 else
                   ht = text(Xlims(2),Ylims(2),CurrentReplacement,...
-                    'fontsize',REPLACEMENT_SIZE,'fontname',REPLACEMENT_FONT,...
+                    'fontsize',FontSize,'fontname',FontName,...
                     'HorizontalAlignment','center','VerticalAlignment','bottom');
                   extent = get(ht,'extent');
                   position = get(ht,'position');
@@ -498,11 +504,11 @@ end
                 if strcmpi(XAlignment,'bottom')
                   if strcmpi(YAlignment,'left')
                     ht = text(Xlims(1),Ylims(2),CurrentReplacement,...
-                    'fontsize',REPLACEMENT_SIZE,'fontname',REPLACEMENT_FONT,...
+                    'fontsize',FontSize,'fontname',FontName,...
                     'HorizontalAlignment','center','VerticalAlignment','bottom');
                   else
                     ht = text(Xlims(2),Ylims(2),CurrentReplacement,...
-                    'fontsize',REPLACEMENT_SIZE,'fontname',REPLACEMENT_FONT,...
+                    'fontsize',FontSize,'fontname',FontName,...
                     'HorizontalAlignment','center','VerticalAlignment','bottom');
                   end
                   extent = get(ht,'extent');
@@ -512,11 +518,11 @@ end
                 else
                   if strcmpi(YAlignment,'left')
                     ht = text(Xlims(1),Ylims(1),CurrentReplacement,...
-                    'fontsize',REPLACEMENT_SIZE,'fontname',REPLACEMENT_FONT,...
+                    'fontsize',FontSize,'fontname',FontName,...
                     'HorizontalAlignment','center','VerticalAlignment','top');
                   else
                     ht = text(Xlims(2),Ylims(1),CurrentReplacement,...
-                    'fontsize',REPLACEMENT_SIZE,'fontname',REPLACEMENT_FONT,...
+                    'fontsize',FontSize,'fontname',FontName,...
                     'HorizontalAlignment','center','VerticalAlignment','top');
                   end
                   extent = get(ht,'extent');
@@ -555,21 +561,21 @@ end
                   ht = text(Xlim(1)+0.6*axlen(Xlim),...
                     Ylim(1)-0.3*axlen(Ylim),...
                     Zlim(1),...
-                    CurrentReplacement,'fontsize',REPLACEMENT_SIZE,...
-                      'fontname',REPLACEMENT_FONT);
+                    CurrentReplacement,'fontsize',FontSize,...
+                      'fontname',FontName);
                   Alignment = 'bl';
                 case 'y'
                   ht = text(Xlim(1)-0.3*axlen(Xlim),...
                     Ylim(1)+0.6*axlen(Ylim),...
                     Zlim(1),...
-                    CurrentReplacement,'fontsize',REPLACEMENT_SIZE,...
-                      'fontname',REPLACEMENT_FONT,'horizontalalignment',...
+                    CurrentReplacement,'fontsize',FontSize,...
+                      'fontname',FontName,'horizontalalignment',...
                       'right');
                   Alignment = 'br';
                 case 'z'
                   ht = text(Xlim(1),Ylim(2),Zlim(2)+0.2*axlen(Zlim),...
-                    CurrentReplacement,'fontsize',REPLACEMENT_SIZE,...
-                       'fontname',REPLACEMENT_FONT,'horizontalalignment',...
+                    CurrentReplacement,'fontsize',FontSize,...
+                       'fontname',FontName,'horizontalalignment',...
                        'right');
                   Alignment = 'br';
                 otherwise
@@ -596,8 +602,10 @@ end
           end
         end
         if TicksAreNumbers
-          ticklabels = strcat(ones(size(ticklabels,1),1)*'$',ticklabels,...
-            ones(size(ticklabels,1),1)*'$');
+          if ~iscell(ticklabels)
+            ticklabels = mat2cell(ticklabels,ones(1,size(ticklabels,1)),size(ticklabels,2));
+          end
+          ticklabels = cellfun(@(x) ['$',x,'$'], ticklabels,'uniformoutput',0);
         end
         clear TicksAreNumbers
 
@@ -629,6 +637,9 @@ end
         end
         % Now add the replacement action...
         SetUnsetProperties(handle,[jj,'ticklabel'],tickreplacements);
+        if AutoTickLabel.(jj)
+          AddUndoAction( @() set(handle, [jj,'ticklabelmode'],'auto'));
+        end
       end
     end
   end
@@ -666,9 +677,9 @@ end
           'Unknown FontAngle for the string "%s"',get(handle,'String'));
         FontAngle = 0;
     end
-    if FontAngle
-      SetUnsetProperties(handle,'FontAngle','normal');
-    end
+%     if FontAngle
+%       SetUnsetProperties(handle,'FontAngle','normal');
+%     end
     % Now get the FontWeight (read - bold)
     switch get(handle,'FontWeight')
       case 'light'
@@ -687,18 +698,18 @@ end
         warning('matlabfrag:UnknownFontWeight',...
           'Unknown FontWeight for the string %s',get(handle,'String'));
     end
-    if FontWeight
-      SetUnsetProperties(handle,'FontWeight','normal');
-    end
+%     if FontWeight
+%       SetUnsetProperties(handle,'FontWeight','normal');
+%     end
     % Test to see if the font is 'fixed width'
     if strcmpi(get(handle,'FontName'),'FixedWidth')
       FixedWidth = 1;
     else
       FixedWidth = 0;
     end
-    if FixedWidth
-      SetUnsetProperties(handle,'FontName','Helvetica');
-    end
+%     if FixedWidth
+%       SetUnsetProperties(handle,'FontName','Helvetica');
+%     end
   end
 
 % Adds a PsFrag command to the cell. This is a function to ensure allow a
@@ -770,22 +781,15 @@ end
     end
   end
 
-% Try and disable legend listeners
-  function TryDisableLegendListeners(handle)
-    try
-      legendListener = get(handle,'ScribeLegendListeners');
-      SetUnsetProperties(legendListener.fontname,'Enabled','off');
-      SetUnsetProperties(legendListener.fontsize,'Enabled','off');
-      SetUnsetProperties(legendListener.fontweight,'Enabled','off');
-      SetUnsetProperties(legendListener.fontangle,'Enabled','off');
-    catch err
-    end
-  end
 
 % Print two versions of the file, one renderered with the renderer of
 % choice, and another rendererd with painters. Then perform some epscombine
 % magic to recombine them.
   function EpsCombine(handle,renderer,filename,dpiswitch,keep_tempfile)
+    TEXTOBJ_REGEXP = ['-?\d+\s+-?\d+\s+mt(\s+-?\d+\s+rotate)?',...
+      '\s+\(.+?\)\s+s',...
+      '(\s+-?\d+\s+rotate)?'];
+    TEXTHDR_REGEXP = '%%IncludeResource:\s+font.*?\n.?\n';
     if keep_tempfile
       tmp_file = [filename,'-painters'];
     else
@@ -830,13 +834,14 @@ end
     if ~keep_tempfile 
       delete([tmp_file,'.eps']);
     end
-    textobjs = regexpi(paintersfile,...
-      ['-?\d+\s+-?\d+\s+mt(\s+-?\d+\s+rotate)?',...
-      '\s+\(.+?\)\s+s',...
-      '(\s+-?\d+\s+rotate)?'],...
-      'match');
-    texthdr = regexpi(paintersfile,'%%IncludeResource:\s+font.*?\n.?\n','match');
-    texthdr = texthdr{1};
+    textobj = regexpi(paintersfile,TEXTOBJ_REGEXP,'match');
+    textobjpos = regexpi(paintersfile,TEXTOBJ_REGEXP);
+    texthdr = regexpi(paintersfile,TEXTHDR_REGEXP,'match');
+    texthdrpos = regexpi(paintersfile,TEXTHDR_REGEXP);
+    textData = cell(length(textobjpos)+length(texthdrpos),2);
+    textData(:,1) = num2cell([texthdrpos.';textobjpos.']);
+    textData(:,2) = [texthdr,textobj].';
+    textData = sortrows(textData,1);
     % Open up the target file, and read the contents.
     try
       fh = fopen([filename,'.eps'],'r');
@@ -850,9 +855,9 @@ end
     end
     % Insert the new text
     findex = regexp(epsfile,'end %%Color Dict');
-    epsfile = sprintf('%s%s\n\n%s\n%s',...
-      epsfile(1:findex-1),texthdr,...
-      sprintf('%s\n\n',textobjs{:}),...
+    epsfile = sprintf('%s\n\n%s\n%s',...
+      epsfile(1:findex-1),...
+      sprintf('%s\n',textData{:,2}),...
       epsfile(findex:end));
     try
       fh = fopen([filename,'.eps'],'w');
