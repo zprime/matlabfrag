@@ -36,7 +36,7 @@
 % ylabel('random','fontsize',14);
 % matlabfrag('RandPlot','epspad',[5,0,0,0]);
 %
-% v0.6.2 08-Jul-2009
+% v0.6.3 08-Jul-2009
 %
 % Please report bugs to zebb.prime+matlabfrag@gmail.com
 %
@@ -92,6 +92,9 @@ StringCounter = 0;
 %   FontAngle (1-italic,0-normal), FontWeight (1-bold,0-normal),
 %   FixedWidth (1-true,0-false), LabelType }
 PsfragCmds = {};
+
+% Before doing anthing to the figure, make sure it is fully drawn
+drawnow;
 
 % Set up the page size to be printed
 Units = get(p.Results.handle,'Units');
@@ -150,6 +153,7 @@ end
 
 if strcmpi(renderer,'painters')
   % Export the image to an eps file
+  drawnow;
   print(p.Results.handle,'-depsc2','-loose',dpiswitch,'-painters',FileName);
 else
   % If using the opengl or zbuffer renderer
@@ -190,9 +194,11 @@ else
     UndoActions{ii}();
   end
 end
-
 % Hide all of the hidden handles again
 set(0,'showhiddenhandles',hidden);
+
+% Flush all drawing operations
+drawnow;
 
 % Test to see if there is any text
 if isempty( PsfragCmds )
@@ -432,7 +438,20 @@ end
       'ztickmode','manual');
     % Extract common options.
     [FontSize,FontAngle,FontWeight,FixedWidth] = CommonOptions(handle);
-    FontName = get(handle,'fontname');
+    try
+      hlist = get(handle,'ScribeLegendListeners');
+      SetUnsetProperties(hlist.fontname,'enabled','off');
+    catch err
+      if ~isempty(regexpi(err.message,'''enabled'''))
+        error('matlabfrag:legendlistener',...
+          ['Oops, it looks like Matlab has changed the way it does legend\n',...
+           'callbacks. Please let me know if you see this via ',...
+           '<a href="mailto:zebb.prime+matlabfrag@gmail.com?subject=',...
+           'Matlabfrag:ScribeLegendListener_error">email</a>']); 
+      end
+    end
+    SetUnsetProperties(handle,'fontname','fixedwidth');
+    FontName = 'fixedwidth';
     % Change the font
     for jj = ['x' 'y' 'z']
       ticklabels = get(handle,[jj,'ticklabel']);
@@ -605,7 +624,7 @@ end
           if ~iscell(ticklabels)
             ticklabels = mat2cell(ticklabels,ones(1,size(ticklabels,1)),size(ticklabels,2));
           end
-          ticklabels = cellfun(@(x) ['$',x,'$'], ticklabels,'uniformoutput',0);
+          ticklabels = cellfun(@(x) ['$', RemoveSpaces(x),'$'], ticklabels,'uniformoutput',0);
         end
         clear TicksAreNumbers
 
@@ -808,6 +827,7 @@ end
       set(ha(jj),'xticklabel','','yticklabel','','zticklabel','');
     end
     % Now print it.
+    drawnow;
     print(handle,'-depsc2','-loose',dpiswitch,...
       ['-',renderer],filename);
     % Restore the text
@@ -818,6 +838,7 @@ end
       set(ha(jj),'zticklabel',tickvals.(hnam(jj)).ztl);
     end
     % Now print a painters version.
+    drawnow;
     print(handle,'-depsc2','-loose',dpiswitch,...
       '-painters',tmp_file);
     % Open it up and extract the text
