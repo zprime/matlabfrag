@@ -36,7 +36,7 @@
 % ylabel('random','fontsize',14);
 % matlabfrag('RandPlot','epspad',[5,0,0,0]);
 %
-% v0.6.1 04-Jul-2009
+% v0.6.2 07-Jul-2009
 %
 % Please report bugs to zebb.prime+matlabfrag@gmail.com
 %
@@ -69,6 +69,8 @@ REPLACEMENT_FONT = 'courier';
 
 % Debug macro levels
 KEEP_TEMPFILE = 1;
+PAUSE_BEFORE_PRINT = 2;
+STEP_THROUGH_ACTIONS = 3;
 
 p = inputParser;
 p.FunctionName = 'matlabfrag';
@@ -108,8 +110,19 @@ set(0,'showhiddenhandles','on');
 ProcessFigure(p.Results.handle);
 
 % Apply the actions resulting from the processing
-for ii=1:length(Actions)
-  Actions{ii}();
+if p.Results.debuglvl >= STEP_THROUGH_ACTIONS
+  for ii=1:length(Actions)
+    Actions{ii}();
+    pause;
+  end
+else
+  for ii=1:length(Actions)
+    Actions{ii}();
+  end
+end
+
+if p.Results.debuglvl >= PAUSE_BEFORE_PRINT
+  pause;
 end
 
 % Test to see if the directory (if specified) exists
@@ -158,8 +171,15 @@ end
 
 % Apply the undo action to restore the image to how
 %  was originally
-for ii=1:length(UndoActions)
-  UndoActions{ii}();
+if p.Results.debuglvl >= STEP_THROUGH_ACTIONS
+  for ii=1:length(UndoActions)
+    UndoActions{ii}();
+    pause;
+  end
+else
+  for ii=1:length(UndoActions)
+    UndoActions{ii}();
+  end
 end
 
 % Hide all of the hidden handles again
@@ -302,6 +322,7 @@ end
     TextPos = cell(1,length(texthandles));
     for jj=1:length(texthandles)
       TextPos{jj} = get(texthandles(jj),'position');
+      AddUndoAction( @() set(texthandles(jj),'position', TextPos{jj} ));
     end
   end
 
@@ -356,8 +377,12 @@ end
     [FontSize,FontAngle,FontWeight,FixedWidth] = CommonOptions(handle);
     % Assign a replacement action for the string
     CurrentReplacement = ReplacementString();
-    SetUnsetProperties(handle,'String',CurrentReplacement,...
-      'fontsize',REPLACEMENT_SIZE,'fontname',REPLACEMENT_FONT);
+    if strcmpi(get(get(handle,'parent'),'tag'),'legend')
+      SetUnsetProperties(handle,'String',CurrentReplacement);
+    else
+      SetUnsetProperties(handle,'String',CurrentReplacement,...
+        'fontsize',REPLACEMENT_SIZE,'fontname',REPLACEMENT_FONT);
+    end
     % Check for a 'UserData' property, which replaces the string with latex
     if ~isempty(UserString)
       String = cell2mat(UserString{:});
@@ -382,19 +407,27 @@ end
     % Return if nothing to do.
     if strcmpi(get(handle,'visible'),'off'); return; end;
     % Make sure figure doesn't resize itself while we are messing with it.
+    for jj=['x' 'y' 'z']
+      AutoTick.(jj) = strcmpi(get(handle,[jj,'tickmode']),'auto');
+      AutoTickLabel.(jj) = strcmpi(get(handle,[jj,'ticklabelmode']),'auto');
+    end
+    SetUnsetProperties(handle,'xlimmode','manual','ylimmode','manual','zlimmode','manual');
+    SetUnsetProperties(handle,'xtickmode','manual','ytickmode','manual',...
+      'ztickmode','manual');
+    SetUnsetProperties(handle,'xticklabelmode','manual','yticklabelmode',...
+      'manual','zticklabelmode','manual');
     SetUnsetProperties(handle,'OuterPosition', get(handle,'OuterPosition') );
     SetUnsetProperties(handle,'ActivePositionProperty','Position');
     SetUnsetProperties(handle,'Position', get(handle,'Position') );
     % Fixing the axes is all that is required for a legend
     if strcmpi(get(handle,'tag'),'legend'); return; end;
+    % Try and disable legend listeners
+    TryDisableLegendListeners(handle);
     % Extract common options.
     [FontSize,FontAngle,FontWeight,FixedWidth] = CommonOptions(handle);
-    FontName = get(handle,'fontname');
-    set(handle,'fontname',REPLACEMENT_FONT,'fontsize',REPLACEMENT_SIZE);
+    SetUnsetProperties(handle,'fontname',REPLACEMENT_FONT,'fontsize',REPLACEMENT_SIZE);
     % Change the font
     for jj = ['x' 'y' 'z']
-      AutoTick = strcmpi(get(handle,[jj,'tickmode']),'auto');
-      AutoTickLabel = strcmpi(get(handle,[jj,'ticklabelmode']),'auto');
       ticklabels = get(handle,[jj,'ticklabel']);
       ticks = get(handle,[jj,'tick']);
       set(handle,[jj,'tickmode'],'manual',[jj,'ticklabelmode'],'manual');
@@ -402,7 +435,7 @@ end
         tickcolour = get(handle,[jj,'color']);
 
         % Test to see if it is on a logarithmic scale
-        if strcmpi(get(handle,[jj,'scale']),'log') && AutoTickLabel
+        if strcmpi(get(handle,[jj,'scale']),'log') && AutoTickLabel.(jj)
           % And all of the values are integers
           ticklabelcell = mat2cell(ticklabels,ones(1,size(ticklabels,1)),size(ticklabels,2));
           if all(~isnan(str2double(ticklabelcell)))
@@ -412,7 +445,7 @@ end
           end
 
           % Test to see if there is a common factor
-        elseif strcmpi(get(handle,[jj,'scale']),'linear') && AutoTick && AutoTickLabel
+        elseif strcmpi(get(handle,[jj,'scale']),'linear') && AutoTick.(jj) && AutoTickLabel.(jj)
           for kk=1:size(ticklabels,1)
             % Find the first non-NaN ratio between tick labels and tick
             % values
@@ -444,7 +477,7 @@ end
               if strcmpi(jj,'x')
                 if strcmpi(XAlignment,'bottom');
                   ht = text(Xlims(2),Ylims(1),CurrentReplacement,...
-                    'fontsize',FontSize,'fontname',FontName,...
+                    'fontsize',REPLACEMENT_SIZE,'fontname',REPLACEMENT_FONT,...
                     'HorizontalAlignment','center','VerticalAlignment','top');
                   extent = get(ht,'extent');
                   position = get(ht,'position');
@@ -452,7 +485,7 @@ end
                   Alignment = 'tc';
                 else
                   ht = text(Xlims(2),Ylims(2),CurrentReplacement,...
-                    'fontsize',FontSize,'fontname',FontName,...
+                    'fontsize',REPLACEMENT_SIZE,'fontname',REPLACEMENT_FONT,...
                     'HorizontalAlignment','center','VerticalAlignment','bottom');
                   extent = get(ht,'extent');
                   position = get(ht,'position');
@@ -465,11 +498,11 @@ end
                 if strcmpi(XAlignment,'bottom')
                   if strcmpi(YAlignment,'left')
                     ht = text(Xlims(1),Ylims(2),CurrentReplacement,...
-                    'fontsize',FontSize,'fontname',FontName,...
+                    'fontsize',REPLACEMENT_SIZE,'fontname',REPLACEMENT_FONT,...
                     'HorizontalAlignment','center','VerticalAlignment','bottom');
                   else
                     ht = text(Xlims(2),Ylims(2),CurrentReplacement,...
-                    'fontsize',FontSize,'fontname',FontName,...
+                    'fontsize',REPLACEMENT_SIZE,'fontname',REPLACEMENT_FONT,...
                     'HorizontalAlignment','center','VerticalAlignment','bottom');
                   end
                   extent = get(ht,'extent');
@@ -479,11 +512,11 @@ end
                 else
                   if strcmpi(YAlignment,'left')
                     ht = text(Xlims(1),Ylims(1),CurrentReplacement,...
-                    'fontsize',FontSize,'fontname',FontName,...
+                    'fontsize',REPLACEMENT_SIZE,'fontname',REPLACEMENT_FONT,...
                     'HorizontalAlignment','center','VerticalAlignment','top');
                   else
                     ht = text(Xlims(2),Ylims(1),CurrentReplacement,...
-                    'fontsize',FontSize,'fontname',FontName,...
+                    'fontsize',REPLACEMENT_SIZE,'fontname',REPLACEMENT_FONT,...
                     'HorizontalAlignment','center','VerticalAlignment','top');
                   end
                   extent = get(ht,'extent');
@@ -492,7 +525,6 @@ end
                   Alignment = 'tc';
                 end
               end
-              set(ht,'fontsize',REPLACEMENT_SIZE,'fontname',REPLACEMENT_FONT);
 
               % Restore gca
               set(p.Results.handle,'CurrentAxes',hCA);
@@ -595,11 +627,8 @@ end
             tickalignment,FontSize,tickcolour,FontAngle,FontWeight,...
             FixedWidth,[jj,'tick']);
         end
-
         % Now add the replacement action...
         SetUnsetProperties(handle,[jj,'ticklabel'],tickreplacements);
-        if AutoTick; AddUndoAction( @() set(handle,[jj,'tickmode'],'auto') ); end;
-        if AutoTickLabel; AddUndoAction( @() set(handle,[jj,'ticklabelmode'],'auto')); end;
       end
     end
   end
@@ -738,6 +767,18 @@ end
         warning('matlabfrag:UnknownVertAlign',...
           'Unknown text vertical alignment for "%s", defaulting to bottom',String);
         valign = 'l';
+    end
+  end
+
+% Try and disable legend listeners
+  function TryDisableLegendListeners(handle)
+    try
+      legendListener = get(handle,'ScribeLegendListeners');
+      SetUnsetProperties(legendListener.fontname,'Enabled','off');
+      SetUnsetProperties(legendListener.fontsize,'Enabled','off');
+      SetUnsetProperties(legendListener.fontweight,'Enabled','off');
+      SetUnsetProperties(legendListener.fontangle,'Enabled','off');
+    catch err
     end
   end
 
