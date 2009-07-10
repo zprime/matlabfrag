@@ -36,7 +36,7 @@
 % ylabel('random','fontsize',14);
 % matlabfrag('RandPlot','epspad',[5,0,0,0]);
 %
-% v0.6.3 08-Jul-2009
+% v0.6.4 10-Jul-2009
 %
 % Please report bugs to zebb.prime+matlabfrag@gmail.com
 %
@@ -64,6 +64,7 @@ TEXHDR = sprintf('%% Generated using matlabfrag\n%% Version: %s\n%% Version Date
 % Global macros
 REPLACEMENT_FORMAT = '%03d';
 USERDATA_PREFIX = 'matlabfrag:';
+NEGXTICK_COMMAND = 'matlabfragNegXTick';
 
 % Debug macro levels
 KEEP_TEMPFILE = 1;
@@ -234,6 +235,8 @@ clear Y
 try
   fid = fopen([FileName,'.tex'],'w');
   fwrite(fid,TEXHDR);
+  
+  writeOutNegXTick = @() fprintf(fid,'\n%%\n\\def\\%s{\\mathord{\\makebox[0pt][r]{$-$}}}',NEGXTICK_COMMAND);
 
   FontStylePrefix = 'matlabtext';
   FontStyleId = double('A')-1;
@@ -244,7 +247,11 @@ try
   CurrentAngle = 0;
   CurrentlyFixedWidth = 0;
   CurrentType = PsfragCmds{1,9};
+  
   fprintf(fid,'\n%%\n%%%% <%s>',CurrentType);
+  if strcmpi(CurrentType,'xtick')
+    writeOutNegXTick();
+  end
   for ii=1:size(PsfragCmds,1)
     % Test to see if the font size has changed
     if ~(CurrentFontSize == PsfragCmds{ii,4})
@@ -276,6 +283,9 @@ try
       fprintf(fid,'\n%%\n%%%% </%s>',CurrentType);
       CurrentType = PsfragCmds{ii,9};
       fprintf(fid,'\n%%\n%%%% <%s>',CurrentType);
+      if strcmpi(CurrentType,'xtick')
+        writeOutNegXTick();
+      end
       if ~NewFontStyle
         fprintf(fid,'\n%%');
       end
@@ -450,9 +460,10 @@ end
            'Matlabfrag:ScribeLegendListener_error">email</a>']); 
       end
     end
+    % Change the font
     SetUnsetProperties(handle,'fontname','fixedwidth');
     FontName = 'fixedwidth';
-    % Change the font
+    % Loop through all axes
     for jj = ['x' 'y' 'z']
       ticklabels = get(handle,[jj,'ticklabel']);
       ticks = get(handle,[jj,'tick']);
@@ -624,13 +635,19 @@ end
           if ~iscell(ticklabels)
             ticklabels = mat2cell(ticklabels,ones(1,size(ticklabels,1)),size(ticklabels,2));
           end
-          ticklabels = cellfun(@(x) ['$', RemoveSpaces(x),'$'], ticklabels,'uniformoutput',0);
+          if strcmpi(jj,'x')
+            ticklabels = cellfun(@(x) ['$',...
+              RemoveSpaces( regexprep(x,'-',['\\',NEGXTICK_COMMAND,' ']) ),...
+              '$'], ticklabels,'uniformoutput',0);
+          else
+            ticklabels = cellfun(@(x) ['$', RemoveSpaces(x),'$'],ticklabels,'uniformoutput',0);
+          end
         end
         clear TicksAreNumbers
 
         tickreplacements = cell(1,size(ticklabels,1));
         % Process the X and Y tick alignment
-        if ~strcmp(jj,'z')
+        if ~strcmpi(jj,'z')
           switch get(handle,[jj,'axislocation'])
             case 'left'
               tickalignment = 'rc';
