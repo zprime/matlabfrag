@@ -581,31 +581,34 @@ matlabfrag(FileName,OPTIONS)
      \begin{figure}[ht]
        \centering
        \psfragfig{graphics/test01}
-       \caption{Output from \ttfamily{test01.m}}
+       \caption{Output from {\ttfamily test01.m}; making sure multiple legend lines are printed properly.}
        \figlabel{test01}
      \end{figure}
      \begin{figure}[ht]
        \centering
        \psfragfig{graphics/test02}
-       \caption{Output from \ttfamily{test02.m}}
+       \caption{Output from {\ttfamily test02.m}; testing italic font for the main axes property. The
+       tick labels aren't italic because they've been rendered in math mode.}
        \figlabel{test02}
      \end{figure}
      \begin{figure}[ht]
        \centering
        \psfragfig{graphics/test03}
-       \caption{Output from \ttfamily{test03.m}}
+       \caption{Output from {\ttfamily test03.m}; bold and fixed-width test with multiple legend entries.}
        \figlabel{test03}
      \end{figure}
      \begin{figure}[ht]
        \centering
        \psfragfig{graphics/test04}
-       \caption{Output from \ttfamily{test04.m}}
+       \caption{Output from {\ttfamily test04.m}; tick labels entered as cells.}
        \figlabel{test04}
      \end{figure}
      \begin{figure}[ht]
        \centering
        \psfragfig{graphics/test05}
-       \caption{Output from \ttfamily{test05.m}}
+       \caption{Output from {\ttfamily test05.m}; tick label alignment test. Y tick labels should be
+       nicely right aligned, and x tick labels should be aligned by the numbers excluding any negative
+       sign, if present.}
        \figlabel{test05}
      \end{figure}     
 \end{document}
