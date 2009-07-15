@@ -36,11 +36,11 @@
 % ylabel('random','fontsize',14);
 % matlabfrag('RandPlot','epspad',[5,0,0,0]);
 %
-% v0.6.4 10-Jul-2009
+% v0.6.5 15-Jul-2009
 %
-% Please report bugs to zebb.prime+matlabfrag@gmail.com
+% Please report bugs to <a href="mailto:zebb.prime+matlabfrag@gmail.com">zebb.prime+matlabfrag@gmail.com</a>
 %
-% Available from the Matlab File Exchange
+% Available on the <a href="matlab:web('http://www.mathworks.com/matlabcentral/fileexchange/21286','-browser')">Matlab File Exchange</a>
 
 function matlabfrag(FileName,varargin)
 
@@ -54,7 +54,7 @@ end
 
 % Version information is taken from the above help information
 HelpText = help('matlabfrag');
-LatestVersion = regexp(HelpText,'(v[\d\.]+) ([\d]+\-[\w]+\-[\d]+)','tokens');
+LatestVersion = regexp(HelpText,'(v[\d\.]+\w*?) ([\d]+\-[\w]+\-[\d]+)','tokens');
 LatestVersion = LatestVersion{1};
 Version = LatestVersion{1};
 VersionDate = LatestVersion{2};
@@ -65,6 +65,8 @@ TEXHDR = sprintf('%% Generated using matlabfrag\n%% Version: %s\n%% Version Date
 REPLACEMENT_FORMAT = '%03d';
 USERDATA_PREFIX = 'matlabfrag:';
 NEGXTICK_COMMAND = 'matlabfragNegXTick';
+ACTION_FUNC_NAME = @(x) sprintf('f%i',x);
+ACTION_DESC_NAME = @(x) sprintf('d%i',x);
 
 % Debug macro levels
 KEEP_TEMPFILE = 1;
@@ -79,13 +81,15 @@ p.addRequired('FileName', @(x) ischar(x) );
 p.addOptional('handle', gcf, @(x) ishandle(x) && strcmpi(get(x,'Type'),'figure') );
 p.addOptional('epspad', [0,0,0,0], @(x) isnumeric(x) && (all(size(x) == [1 4])) );
 p.addOptional('renderer', 'painters', ...
-    @(x) any( strcmpi(x,{'painters','opengl','zbuffer'}) ) );
+  @(x) any( strcmpi(x,{'painters','opengl','zbuffer'}) ) );
 p.addOptional('dpi', 300, @(x) isnumeric(x) );
 p.addOptional('debuglvl',0, @(x) isnumeric(x) && x>=0);
 p.parse(FileName,varargin{:});
 
-Actions = {};
-UndoActions = {};
+% Create Action and UndoAction structures, and initialise the length field
+% to 0.
+Actions.length = 0;
+UndoActions.length = 0;
 StringCounter = 0;
 
 % PsfragCmds are currently in the order:
@@ -102,64 +106,73 @@ Units = get(p.Results.handle,'Units');
 set(p.Results.handle,'Units','centimeters');
 Pos = get(p.Results.handle,'Position');
 set(p.Results.handle,'Units',Units);
-SetUnsetProperties(p.Results.handle,'PaperUnits','centimeters',...
-  'PaperPosition',Pos);
+SetUnsetProperties('PaperUnits to cm, PaperPos to Pos',p.Results.handle,...
+  'PaperUnits','centimeters','PaperPosition',Pos);
 
-% Show all of the hidden handles
-hidden = get(0,'showhiddenhandles');
-set(0,'showhiddenhandles','on');
-
-% Process the picture
-ProcessFigure(p.Results.handle);
-
-% Apply the actions resulting from the processing
-if p.Results.debuglvl >= STEP_THROUGH_ACTIONS
-  disp('Starting to apply actions');
-  for ii=1:length(Actions)
-    Actions{ii}();
+try
+  % Show all of the hidden handles
+  hidden = get(0,'showhiddenhandles');
+  set(0,'showhiddenhandles','on');
+  
+  % Process the picture
+  ProcessFigure(p.Results.handle);
+  
+  % Apply the actions resulting from the processing
+  if p.Results.debuglvl >= STEP_THROUGH_ACTIONS
+    disp('Starting to apply actions');
+    for ii=1:Actions.length
+      fprintf(1,'Press space to apply: %s\n',Actions.( ACTION_DESC_NAME(ii) ));
+      pause;
+      Actions.( ACTION_FUNC_NAME(ii) )();
+    end
+    disp('Finished applying actions');
+  else
+    for ii=1:Actions.length
+      Actions.( ACTION_FUNC_NAME(ii) )();
+    end
+  end
+  
+  if p.Results.debuglvl >= PAUSE_BEFORE_PRINT
+    disp('Paused before printing');
     pause;
   end
-  disp('Finished applying actions');
-else
-  for ii=1:length(Actions)
-    Actions{ii}();
+  
+  % Test to see if the directory (if specified) exists
+  [pathstr,namestr] = fileparts(FileName);
+  if ~isempty(pathstr)
+    if ~exist(['./',pathstr],'dir')
+      mkdir(pathstr);
+    end
+    % Tidy up the FileName
+    FileName = [pathstr,filesep,namestr];
+  else
+    FileName = namestr;
   end
-end
-
-if p.Results.debuglvl >= PAUSE_BEFORE_PRINT
-  disp('Paused before printing');
-  pause;
-end
-
-% Test to see if the directory (if specified) exists
-[pathstr,namestr] = fileparts(FileName);
-if ~isempty(pathstr)
-  if ~exist(['./',pathstr],'dir')
-    mkdir(pathstr);
+  
+  dpiswitch = ['-r',num2str( round( p.Results.dpi ) )];
+  % Unless over-ridden, check to see if 'renderermode' is 'manual'
+  renderer = p.Results.renderer;
+  if any( strcmpi(p.UsingDefaults,'renderer') )
+    if strcmpi(get(p.Results.handle,'renderermode'),'manual')
+      renderer = get(p.Results.handle,'renderer');
+    end
   end
-  % Tidy up the FileName
-  FileName = [pathstr,filesep,namestr];
-else
-  FileName = namestr;
-end
-
-dpiswitch = ['-r',num2str( round( p.Results.dpi ) )];
-% Unless over-ridden, check to see if 'renderermode' is 'manual'
-renderer = p.Results.renderer;
-if any( strcmpi(p.UsingDefaults,'renderer') )
-  if strcmpi(get(p.Results.handle,'renderermode'),'manual')
-    renderer = get(p.Results.handle,'renderer');
+  
+  if strcmpi(renderer,'painters')
+    % Export the image to an eps file
+    drawnow;
+    print(p.Results.handle,'-depsc2','-loose',dpiswitch,'-painters',FileName);
+  else
+    % If using the opengl or zbuffer renderer
+    EpsCombine(p.Results.handle,renderer,FileName,dpiswitch,...
+      p.Results.debuglvl>=KEEP_TEMPFILE)
   end
-end
-
-if strcmpi(renderer,'painters')
-  % Export the image to an eps file
-  drawnow;
-  print(p.Results.handle,'-depsc2','-loose',dpiswitch,'-painters',FileName);
-else
-  % If using the opengl or zbuffer renderer
-  EpsCombine(p.Results.handle,renderer,FileName,dpiswitch,...
-    p.Results.debuglvl>=KEEP_TEMPFILE)
+  
+  % Hide all of the hidden handles again
+  set(0,'showhiddenhandles',hidden);
+catch err
+  set(0,'showhiddenhandles',hidden);
+  rethrow(err);
 end
 
 if p.Results.debuglvl >= PAUSE_AFTER_PRINT
@@ -185,18 +198,17 @@ end
 %  was originally
 if p.Results.debuglvl >= STEP_THROUGH_ACTIONS
   disp('Starting to apply undo actions');
-  for ii=1:length(UndoActions)
-    UndoActions{ii}();
+  for ii=UndoActions.length:-1:1
+    fprintf(1,'Press space to unapply: %s\n',UndoActions.( ACTION_DESC_NAME(ii) ));
     pause;
+    UndoActions.( ACTION_FUNC_NAME(ii) )();
   end
   disp('Finished applying undo actions');
 else
-  for ii=1:length(UndoActions)
-    UndoActions{ii}();
+  for ii=UndoActions.length:-1:1
+    UndoActions.( ACTION_FUNC_NAME(ii) )();
   end
 end
-% Hide all of the hidden handles again
-set(0,'showhiddenhandles',hidden);
 
 % Flush all drawing operations
 drawnow;
@@ -205,9 +217,9 @@ drawnow;
 if isempty( PsfragCmds )
   warning('matlabfrag:noText',...
     ['It appears your figure does not contain any text. It is probably\n',...
-     'better to use a function that just exports the figure in this',...
-     'case (e.g.\nthe ''print'' command).\n',...
-     'Matlabfrag will now print the eps file, but not write a tex file.']);
+    'better to use a function that just exports the figure in this',...
+    'case (e.g.\nthe ''print'' command).\n',...
+    'Matlabfrag will now print the eps file, but not write a tex file.']);
   return;
 end
 
@@ -237,7 +249,7 @@ try
   fwrite(fid,TEXHDR);
   
   writeOutNegXTick = @() fprintf(fid,'\n%%\n\\def\\%s{\\mathord{\\makebox[0pt][r]{$-$}}}',NEGXTICK_COMMAND);
-
+  
   FontStylePrefix = 'matlabtext';
   FontStyleId = double('A')-1;
   NewFontStyle = 1;
@@ -313,9 +325,9 @@ try
       char(FontStyleId),RemoveSpaces(PsfragCmds{ii,1}));
   end
   fprintf(fid,'\n%%\n%%%% </%s>',CurrentType);
-
+  
   fclose(fid);
-
+  
 catch err
   if fid > 0
     fclose(fid);
@@ -347,7 +359,7 @@ end
     TextPos = cell(1,length(texthandles));
     for jj=1:length(texthandles)
       TextPos{jj} = get(texthandles(jj),'position');
-      AddUndoAction( @() set(texthandles(jj),'position', TextPos{jj} ));
+      AddUndoAction('Reset text posision', @() set(texthandles(jj),'position', TextPos{jj} ));
     end
   end
 
@@ -402,18 +414,18 @@ end
     [FontSize,FontAngle,FontWeight,FixedWidth] = CommonOptions(handle);
     % Assign a replacement action for the string
     CurrentReplacement = ReplacementString();
-    SetUnsetProperties(handle,'String',CurrentReplacement);
+    SetUnsetProperties('Replacing text string',handle,'String',CurrentReplacement);
     % Check for a 'UserData' property, which replaces the string with latex
     if ~isempty(UserString)
       String = cell2mat(UserString{:});
     end
     % Replacement action for the interpreter
     if ~strcmpi(get(handle,'interpreter'),'none')
-      SetUnsetProperties(handle,'interpreter','none');
+      SetUnsetProperties('Text Interpreter to none',handle,'interpreter','none');
     end
     % Make sure the final position is the same as the original one
-    AddAction( @() set(handle,'position',Pos) );
-
+    AddAction('Reset text Pos', @() set(handle,'position',Pos) );
+    
     % Get the text colour
     Colour = get(handle,'color');
     % Finally create the replacement command
@@ -428,9 +440,8 @@ end
     if strcmpi(get(handle,'visible'),'off'); return; end;
     % If legend, freeze the axes and return.
     if strcmpi(get(handle,'tag'),'legend');
-      SetUnsetProperties(handle,'OuterPosition', get(handle,'OuterPosition') );
-      SetUnsetProperties(handle,'ActivePositionProperty','OuterPosition');
-      SetUnsetProperties(handle,'Position', get(handle,'Position') );
+      SetUnsetProperties('Legend Pos to current Pos',...
+        handle,'Position', get(handle,'Position') );
       return;
     end;
     % Make sure figure doesn't resize itself while we are messing with it.
@@ -438,30 +449,26 @@ end
       AutoTick.(jj) = strcmpi(get(handle,[jj,'tickmode']),'auto');
       AutoTickLabel.(jj) = strcmpi(get(handle,[jj,'ticklabelmode']),'auto');
     end
-    SetUnsetProperties(handle,'OuterPosition', get(handle,'OuterPosition') );
-    SetUnsetProperties(handle,'ActivePositionProperty','Position');
-    SetUnsetProperties(handle,'Position', get(handle,'Position') );
-    SetUnsetProperties(handle,'xticklabelmode','manual','yticklabelmode',...
-      'manual','zticklabelmode','manual');
-    SetUnsetProperties(handle,'xlimmode','manual','ylimmode','manual','zlimmode','manual');
-    SetUnsetProperties(handle,'xtickmode','manual','ytickmode','manual',...
-      'ztickmode','manual');
-    % Extract common options.
-    [FontSize,FontAngle,FontWeight,FixedWidth] = CommonOptions(handle);
+    SetUnsetProperties('TickModes to manual',handle,...
+      'xlimmode','manual','ylimmode','manual','zlimmode','manual',...
+      'xtickmode','manual','ytickmode','manual','ztickmode','manual',...
+      'xticklabelmode','manual','yticklabelmode','manual','zticklabelmode','manual');
+    SetUnsetProperties('Fix Axes Pos',handle,'position', get(handle,'position') );
     try
       hlist = get(handle,'ScribeLegendListeners');
-      SetUnsetProperties(hlist.fontname,'enabled','off');
+      SetUnsetProperties('Disable legend fontname listener',hlist.fontname,'enabled','off');
     catch err
       if ~isempty(regexpi(err.message,'''enabled'''))
         error('matlabfrag:legendlistener',...
           ['Oops, it looks like Matlab has changed the way it does legend\n',...
-           'callbacks. Please let me know if you see this via ',...
-           '<a href="mailto:zebb.prime+matlabfrag@gmail.com?subject=',...
-           'Matlabfrag:ScribeLegendListener_error">email</a>']); 
+          'callbacks. Please let me know if you see this via ',...
+          '<a href="mailto:zebb.prime+matlabfrag@gmail.com?subject=',...
+          'Matlabfrag:ScribeLegendListener_error">email</a>']);
       end
     end
-    % Change the font
-    SetUnsetProperties(handle,'fontname','fixedwidth');
+    % Extract common options.
+    [FontSize,FontAngle,FontWeight,FixedWidth] = CommonOptions(handle);
+    SetUnsetProperties('Axes font to fixed-width',handle,'FontName','fixedwidth');
     FontName = 'fixedwidth';
     % Loop through all axes
     for jj = ['x' 'y' 'z']
@@ -470,7 +477,7 @@ end
       set(handle,[jj,'tickmode'],'manual',[jj,'ticklabelmode'],'manual');
       if ~isempty(ticklabels)
         tickcolour = get(handle,[jj,'color']);
-
+        
         % Test to see if it is on a logarithmic scale
         if strcmpi(get(handle,[jj,'scale']),'log') && AutoTickLabel.(jj)
           % And all of the values are integers
@@ -479,7 +486,7 @@ end
             % If so, make the labels read 10^<TickLabel>
             ticklabels = cellfun(@(x) ['$10^{',x,'}$'], ticklabelcell,'uniformoutput',0);
           end
-
+          
           % Test to see if there is a common factor
         elseif strcmpi(get(handle,[jj,'scale']),'linear') && AutoTick.(jj) && AutoTickLabel.(jj)
           for kk=1:size(ticklabels,1)
@@ -488,7 +495,7 @@ end
             scale = ticks(kk)/str2double(ticklabels(kk,:));
             if ~isnan(scale); break; end;
           end
-
+          
           % If the scale is not 1, then we need to place a marker near the
           % axis
           if abs(scale-1) > 1e-3
@@ -496,7 +503,7 @@ end
             % Test to see if this is a 3D or 2D plot
             if isempty(get(handle,'zticklabel')) &&...
                 all( get(handle,'view') == [0 90] )
-
+              
               %2D Plot... fairly easy.
               % Common required data...
               Xlims = get(handle,'xlim');
@@ -508,7 +515,7 @@ end
               % Make the axis we are looking at the current one
               hCA = get(p.Results.handle,'CurrentAxes');
               set(p.Results.handle,'CurrentAxes',handle);
-
+              
               % X axis scale
               if strcmpi(jj,'x')
                 if strcmpi(XAlignment,'bottom');
@@ -528,18 +535,18 @@ end
                   set(ht,'position',[position(1) position(2)+1.0*extent(4) position(3)]);
                   Alignment = 'bc';
                 end
-
+                
                 % Y axis scale
               else
                 if strcmpi(XAlignment,'bottom')
                   if strcmpi(YAlignment,'left')
                     ht = text(Xlims(1),Ylims(2),CurrentReplacement,...
-                    'fontsize',FontSize,'fontname',FontName,...
-                    'HorizontalAlignment','center','VerticalAlignment','bottom');
+                      'fontsize',FontSize,'fontname',FontName,...
+                      'HorizontalAlignment','center','VerticalAlignment','bottom');
                   else
                     ht = text(Xlims(2),Ylims(2),CurrentReplacement,...
-                    'fontsize',FontSize,'fontname',FontName,...
-                    'HorizontalAlignment','center','VerticalAlignment','bottom');
+                      'fontsize',FontSize,'fontname',FontName,...
+                      'HorizontalAlignment','center','VerticalAlignment','bottom');
                   end
                   extent = get(ht,'extent');
                   position = get(ht,'position');
@@ -548,12 +555,12 @@ end
                 else
                   if strcmpi(YAlignment,'left')
                     ht = text(Xlims(1),Ylims(1),CurrentReplacement,...
-                    'fontsize',FontSize,'fontname',FontName,...
-                    'HorizontalAlignment','center','VerticalAlignment','top');
+                      'fontsize',FontSize,'fontname',FontName,...
+                      'HorizontalAlignment','center','VerticalAlignment','top');
                   else
                     ht = text(Xlims(2),Ylims(1),CurrentReplacement,...
-                    'fontsize',FontSize,'fontname',FontName,...
-                    'HorizontalAlignment','center','VerticalAlignment','top');
+                      'fontsize',FontSize,'fontname',FontName,...
+                      'HorizontalAlignment','center','VerticalAlignment','top');
                   end
                   extent = get(ht,'extent');
                   position = get(ht,'position');
@@ -561,14 +568,14 @@ end
                   Alignment = 'tc';
                 end
               end
-
+              
               % Restore gca
               set(p.Results.handle,'CurrentAxes',hCA);
               % Create the replacement command
               AddPsfragCommand(LatexScale,CurrentReplacement,Alignment,FontSize,...
                 tickcolour,FontAngle,FontWeight,FixedWidth,[jj,'scale']);
               % Delete the label
-              AddUndoAction( @() delete(ht) );
+              AddUndoAction('Delete axis scale', @() delete(ht) );
             else
               % Why is this so hard?
               warning('matlabfrag:scaled3Daxis',...
@@ -592,21 +599,21 @@ end
                     Ylim(1)-0.3*axlen(Ylim),...
                     Zlim(1),...
                     CurrentReplacement,'fontsize',FontSize,...
-                      'fontname',FontName);
+                    'fontname',FontName);
                   Alignment = 'bl';
                 case 'y'
                   ht = text(Xlim(1)-0.3*axlen(Xlim),...
                     Ylim(1)+0.6*axlen(Ylim),...
                     Zlim(1),...
                     CurrentReplacement,'fontsize',FontSize,...
-                      'fontname',FontName,'horizontalalignment',...
-                      'right');
+                    'fontname',FontName,'horizontalalignment',...
+                    'right');
                   Alignment = 'br';
                 case 'z'
                   ht = text(Xlim(1),Ylim(2),Zlim(2)+0.2*axlen(Zlim),...
                     CurrentReplacement,'fontsize',FontSize,...
-                       'fontname',FontName,'horizontalalignment',...
-                       'right');
+                    'fontname',FontName,'horizontalalignment',...
+                    'right');
                   Alignment = 'br';
                 otherwise
                   error('matlabfrag:wtf',['Bad axis; this error shouldn''t happen.\n',...
@@ -618,11 +625,11 @@ end
               AddPsfragCommand(LatexScale,CurrentReplacement,Alignment,FontSize,...
                 tickcolour,FontAngle,FontWeight,FixedWidth,[jj,'scale']);
               % Delete the label
-              AddUndoAction( @() delete(ht) );
+              AddUndoAction('DeleteAxesScale', @() delete(ht) );
             end
           end
         end
-
+        
         % Test whether all of the ticks are numbers, if so wrap them in $
         TicksAreNumbers = 1;
         for kk=1:size(ticklabels,1)
@@ -644,7 +651,7 @@ end
           end
         end
         clear TicksAreNumbers
-
+        
         tickreplacements = cell(1,size(ticklabels,1));
         % Process the X and Y tick alignment
         if ~strcmpi(jj,'z')
@@ -663,7 +670,7 @@ end
                 'Unknown axis location defaulting to ''cr''');
           end
         end
-
+        
         % Now process the actual tick labels themselves...
         for kk=1:size(ticklabels,1)
           tickreplacements{kk} = ReplacementString();
@@ -672,10 +679,7 @@ end
             FixedWidth,[jj,'tick']);
         end
         % Now add the replacement action...
-        SetUnsetProperties(handle,[jj,'ticklabel'],tickreplacements);
-        if AutoTickLabel.(jj)
-          AddUndoAction( @() set(handle, [jj,'ticklabelmode'],'auto'));
-        end
+        SetUnsetProperties('Tick replacement',handle,[jj,'ticklabel'],tickreplacements);
       end
     end
   end
@@ -692,12 +696,10 @@ end
     % First get the fontsize (making sure it is in points)
     temp_prop = get(handle,'FontUnits');
     if ~strcmpi(temp_prop,'points')
-      set(handle,'FontUnits','points');
-      FontSize = get(handle,'FontSize');
-      set(handle,'FontUnits',temp_prop);
-    else
-      FontSize = get(handle,'FontSize');
+      SetUnsetProperties('FontUnits to points',handle,'FontUnits','points');
     end
+    FontSize = get(handle,'FontSize');
+% %     SetUnsetProperties('FontSize to 10',handle,'Fontsize',10);
     % Now get the font angle (read - italics)
     switch get(handle,'FontAngle')
       case 'normal'
@@ -713,9 +715,9 @@ end
           'Unknown FontAngle for the string "%s"',get(handle,'String'));
         FontAngle = 0;
     end
-%     if FontAngle
-%       SetUnsetProperties(handle,'FontAngle','normal');
-%     end
+% %     if FontAngle
+% %       SetUnsetProperties('FontAngle to normal',handle,'FontAngle','normal');
+% %     end
     % Now get the FontWeight (read - bold)
     switch get(handle,'FontWeight')
       case 'light'
@@ -734,18 +736,18 @@ end
         warning('matlabfrag:UnknownFontWeight',...
           'Unknown FontWeight for the string %s',get(handle,'String'));
     end
-%     if FontWeight
-%       SetUnsetProperties(handle,'FontWeight','normal');
-%     end
+% %     if FontWeight
+% %       SetUnsetProperties('FontWeight to normal',handle,'FontWeight','normal');
+% %     end
     % Test to see if the font is 'fixed width'
     if strcmpi(get(handle,'FontName'),'FixedWidth')
       FixedWidth = 1;
     else
       FixedWidth = 0;
     end
-%     if FixedWidth
-%       SetUnsetProperties(handle,'FontName','Helvetica');
-%     end
+% %     if ~FixedWidth
+% %       SetUnsetProperties('Set text to FixedWidth',handle,'FontName','fixed-width');
+% %     end
   end
 
 % Adds a PsFrag command to the cell. This is a function to ensure allow a
@@ -758,24 +760,28 @@ end
 
 % Set and then unset some handle properties using 'Actions' and
 % 'UndoActions'
-  function SetUnsetProperties(handle,varargin)
-    for jj=1:2:length(varargin)
-      TempProp = get(handle,varargin{jj});
-      AddAction( @() set(handle,varargin{jj},varargin{jj+1}) );
-      AddUndoAction( @() set(handle,varargin{jj},TempProp) );
-    end
+  function SetUnsetProperties(description,handle,varargin)
+    Props = varargin(1:2:end);
+    PropVals = varargin(2:2:end);
+    TempPropVals = get(handle,Props);
+    AddAction(description, @() set(handle,Props,PropVals) );
+    AddUndoAction(description, @() set(handle,Props,TempPropVals) );
   end
 
 % Add an 'action' function to the list of actions to perform before the
 %  image is saved.
-  function AddAction(action)
-    Actions{length(Actions)+1} = action;
+  function AddAction(description,action)
+    Actions.length = Actions.length + 1;
+    Actions.( ACTION_FUNC_NAME( Actions.length ) ) = action;
+    Actions.( ACTION_DESC_NAME( Actions.length ) ) = description;
   end
 
 % Adds an 'undo-action' function to the list... these get processed after
 %  the image has been saved, to restore the screen state.
-  function AddUndoAction(action)
-    UndoActions{length(UndoActions)+1} = action;
+  function AddUndoAction(description,action)
+    UndoActions.length = UndoActions.length + 1;
+    UndoActions.( ACTION_FUNC_NAME( UndoActions.length ) ) = action;
+    UndoActions.( ACTION_DESC_NAME( UndoActions.length ) ) = description;
   end
 
 % Remove leading and trailing edge white spaces
@@ -869,7 +875,7 @@ end
       end
       rethrow(err);
     end
-    if ~keep_tempfile 
+    if ~keep_tempfile
       delete([tmp_file,'.eps']);
     end
     textobj = regexpi(paintersfile,TEXTOBJ_REGEXP,'match');
@@ -908,5 +914,5 @@ end
       rethrow(err);
     end
   end
-    
+
 end % of matlabfrag(FileName,p.Results.handle)
