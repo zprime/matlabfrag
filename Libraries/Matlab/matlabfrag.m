@@ -36,7 +36,7 @@
 % ylabel('random','fontsize',14);
 % matlabfrag('RandPlot','epspad',[5,0,0,0]);
 %
-% v0.6.5 15-Jul-2009
+% v0.6.6 16-Jul-2009
 %
 % Please report bugs to <a href="mailto:zebb.prime+matlabfrag@gmail.com">zebb.prime+matlabfrag@gmail.com</a>
 %
@@ -86,6 +86,10 @@ p.addOptional('dpi', 300, @(x) isnumeric(x) );
 p.addOptional('debuglvl',0, @(x) isnumeric(x) && x>=0);
 p.parse(FileName,varargin{:});
 
+if FigureHasNoText(p)
+  return;
+end
+
 % Create Action and UndoAction structures, and initialise the length field
 % to 0.
 Actions.length = 0;
@@ -109,70 +113,59 @@ set(p.Results.handle,'Units',Units);
 SetUnsetProperties('PaperUnits to cm, PaperPos to Pos',p.Results.handle,...
   'PaperUnits','centimeters','PaperPosition',Pos);
 
-try
-  % Show all of the hidden handles
-  hidden = get(0,'showhiddenhandles');
-  set(0,'showhiddenhandles','on');
-  
-  % Process the picture
-  ProcessFigure(p.Results.handle);
-  
-  % Apply the actions resulting from the processing
-  if p.Results.debuglvl >= STEP_THROUGH_ACTIONS
-    disp('Starting to apply actions');
-    for ii=1:Actions.length
-      fprintf(1,'Press space to apply: %s\n',Actions.( ACTION_DESC_NAME(ii) ));
-      pause;
-      Actions.( ACTION_FUNC_NAME(ii) )();
-    end
-    disp('Finished applying actions');
-  else
-    for ii=1:Actions.length
-      Actions.( ACTION_FUNC_NAME(ii) )();
-    end
-  end
-  
-  if p.Results.debuglvl >= PAUSE_BEFORE_PRINT
-    disp('Paused before printing');
+% Process the picture
+ProcessFigure(p.Results.handle);
+
+% Apply the actions resulting from the processing
+if p.Results.debuglvl >= STEP_THROUGH_ACTIONS
+  disp('Starting to apply actions');
+  for ii=1:Actions.length
+    fprintf(1,'Press space to apply: %s\n',Actions.( ACTION_DESC_NAME(ii) ));
     pause;
+    Actions.( ACTION_FUNC_NAME(ii) )();
   end
-  
-  % Test to see if the directory (if specified) exists
-  [pathstr,namestr] = fileparts(FileName);
-  if ~isempty(pathstr)
-    if ~exist(['./',pathstr],'dir')
-      mkdir(pathstr);
-    end
-    % Tidy up the FileName
-    FileName = [pathstr,filesep,namestr];
-  else
-    FileName = namestr;
+  disp('Finished applying actions');
+else
+  for ii=1:Actions.length
+    Actions.( ACTION_FUNC_NAME(ii) )();
   end
-  
-  dpiswitch = ['-r',num2str( round( p.Results.dpi ) )];
-  % Unless over-ridden, check to see if 'renderermode' is 'manual'
-  renderer = p.Results.renderer;
-  if any( strcmpi(p.UsingDefaults,'renderer') )
-    if strcmpi(get(p.Results.handle,'renderermode'),'manual')
-      renderer = get(p.Results.handle,'renderer');
-    end
+end
+
+if p.Results.debuglvl >= PAUSE_BEFORE_PRINT
+  disp('Paused before printing');
+  pause;
+end
+
+% Test to see if the directory (if specified) exists
+[pathstr,namestr] = fileparts(FileName);
+if ~isempty(pathstr)
+  if ~exist(['./',pathstr],'dir')
+    mkdir(pathstr);
   end
-  
-  if strcmpi(renderer,'painters')
-    % Export the image to an eps file
-    drawnow;
-    print(p.Results.handle,'-depsc2','-loose',dpiswitch,'-painters',FileName);
-  else
-    % If using the opengl or zbuffer renderer
-    EpsCombine(p.Results.handle,renderer,FileName,dpiswitch,...
-      p.Results.debuglvl>=KEEP_TEMPFILE)
+  % Tidy up the FileName
+  FileName = [pathstr,filesep,namestr];
+else
+  FileName = namestr;
+end
+
+dpiswitch = ['-r',num2str( round( p.Results.dpi ) )];
+% Unless over-ridden, check to see if 'renderermode' is 'manual'
+renderer = p.Results.renderer;
+if any( strcmpi(p.UsingDefaults,'renderer') )
+  if strcmpi(get(p.Results.handle,'renderermode'),'manual')
+    renderer = get(p.Results.handle,'renderer');
   end
-  
-  % Hide all of the hidden handles again
-  set(0,'showhiddenhandles',hidden);
-catch err
-  set(0,'showhiddenhandles',hidden);
-  rethrow(err);
+end
+
+if strcmpi(renderer,'painters')
+  % Export the image to an eps file
+  drawnow;
+  print(p.Results.handle,'-depsc2','-loose',dpiswitch,'-painters',FileName);
+  FileWait( [FileName,'.eps'] );
+else
+  % If using the opengl or zbuffer renderer
+  EpsCombine(p.Results.handle,renderer,FileName,dpiswitch,...
+    p.Results.debuglvl>=KEEP_TEMPFILE)
 end
 
 if p.Results.debuglvl >= PAUSE_AFTER_PRINT
@@ -213,33 +206,23 @@ end
 % Flush all drawing operations
 drawnow;
 
-% Test to see if there is any text
-if isempty( PsfragCmds )
-  warning('matlabfrag:noText',...
-    ['It appears your figure does not contain any text. It is probably\n',...
-    'better to use a function that just exports the figure in this',...
-    'case (e.g.\nthe ''print'' command).\n',...
-    'Matlabfrag will now print the eps file, but not write a tex file.']);
-  return;
-end
-
 % Sort by text size first
-[Y,I] = sortrows(char(PsfragCmds{:,4}));
+[Y,I] = sortrows( cell2mat( PsfragCmds(:,4) ) );
 PsfragCmds = PsfragCmds(I,:);
 % Now sort by colour
-[Y,I] = sortrows(char(PsfragCmds{:,5}),[3 2 1]);
+[Y,I] = sortrows( cell2mat( PsfragCmds(:,5) ), [3 2 1] );
 PsfragCmds = PsfragCmds(I,:);
 % Now sort by font angle
-[Y,I] = sortrows(char(PsfragCmds{:,6}));
+[Y,I] = sortrows( cell2mat( PsfragCmds(:,6) ) );
 PsfragCmds = PsfragCmds(I,:);
 % Now sort by font weight
-[Y,I] = sortrows(char(PsfragCmds{:,7}));
+[Y,I] = sortrows( cell2mat( PsfragCmds(:,7) ) );
 PsfragCmds = PsfragCmds(I,:);
 % Now sort by whether it is 'fixed width'
-[Y,I] = sortrows(char(PsfragCmds{:,8}));
+[Y,I] = sortrows( cell2mat( PsfragCmds(:,8) ) );
 PsfragCmds = PsfragCmds(I,:);
 % Now sort by label type
-[Y,I] = sortrows(char(PsfragCmds{:,9}));
+[Y,I] = sortrows( PsfragCmds(:,9) );
 PsfragCmds = PsfragCmds(I,:);
 clear Y
 
@@ -328,26 +311,39 @@ try
   
   fclose(fid);
   
-catch err
+catch                %#ok -- needed for r2007a support
+  err = lasterror;   %#ok
   if fid > 0
     fclose(fid);
   end
   err.stack.line
-  rethrow(err);
+  rethrow( err );
 end
 % All done! Below are the sub-functions
 
 % Find all of the 'text' and 'axes' objects in the
 % figure and dispatch the processing of them
   function ProcessFigure(parent)
-    % Dispatcher to different processing types
+    
+    % Show all of the hidden handles
+    hidden = get(0,'showhiddenhandles');
+    set(0,'showhiddenhandles','on');
+    
+    % Get all text and axes handles
     axeshandles = findobj(parent,'Type','axes');
     texthandles = findobj(parent,'Type','text');
+    
+    % Hide all of the hidden handles again
+    set(0,'showhiddenhandles',hidden);
+    
+    % Get the position of all the text objects
     textpos = GetTextPos(texthandles);
+    
     % Freeze all axes, and process ticks.
     for jj=1:length(axeshandles)
       ProcessTicks(axeshandles(jj));
     end
+    
     % Process all text.
     for jj=1:length(texthandles)
       ProcessText(texthandles(jj),textpos{jj});
@@ -457,7 +453,8 @@ end
     try
       hlist = get(handle,'ScribeLegendListeners');
       SetUnsetProperties('Disable legend fontname listener',hlist.fontname,'enabled','off');
-    catch err
+    catch                 %#ok -- required for r2007a support
+      err = lasterror;    %#ok
       if ~isempty(regexpi(err.message,'''enabled'''))
         error('matlabfrag:legendlistener',...
           ['Oops, it looks like Matlab has changed the way it does legend\n',...
@@ -823,7 +820,18 @@ end
     end
   end
 
-
+% Busy waits for a file to finish being created. This is necessary because
+% on some platforms the file isn't available immediately after performing a
+% print.
+  function FileWait(filename)
+    counter = 0;
+    while ~exist(filename,'file')
+      pause(0.05);
+      assert( counter < 100, 'matlabfrag:filetimeout',...
+        'File Timeout. This occured after printing %s and trying to then read it.',filename);
+      counter = counter + 1;
+    end
+  end
 % Print two versions of the file, one renderered with the renderer of
 % choice, and another rendererd with painters. Then perform some epscombine
 % magic to recombine them.
@@ -837,9 +845,18 @@ end
     else
       tmp_file = tempname;
     end
+    
+    % Show all of the hidden handles
+    hidden = get(0,'showhiddenhandles');
+    set(0,'showhiddenhandles','on');
+    
     ht = findobj(handle,'type','text');
     ht = findobj(ht,'visible','on');
     ha = findobj(handle,'type','axes');
+    
+    % Hide all of the text handles again
+    set(0,'showhiddenhandles',hidden);
+    
     % Make the text invisible
     set(ht,'visible','off');
     hnam = @(x) ['h',num2str(x)];
@@ -853,6 +870,7 @@ end
     drawnow;
     print(handle,'-depsc2','-loose',dpiswitch,...
       ['-',renderer],filename);
+    FileWait([filename,'.eps']);
     % Restore the text
     set(ht,'visible','on');
     for jj=1:length(ha)
@@ -864,16 +882,18 @@ end
     drawnow;
     print(handle,'-depsc2','-loose',dpiswitch,...
       '-painters',tmp_file);
+    FileWait([tmp_file,'.eps']);
     % Open it up and extract the text
     try
       fh = fopen([tmp_file,'.eps'],'r');
       paintersfile = fread(fh,inf,'uint8=>char').';
       fh = fclose(fh);
-    catch err
-      if fh
+    catch                  %#ok -- required for r2007a support
+      err = lasterror;     %#ok
+      if fh > 0
         fh = close(fh);
       end
-      rethrow(err);
+      rethrow( err );
     end
     if ~keep_tempfile
       delete([tmp_file,'.eps']);
@@ -885,17 +905,20 @@ end
     textData = cell(length(textobjpos)+length(texthdrpos),2);
     textData(:,1) = num2cell([texthdrpos.';textobjpos.']);
     textData(:,2) = [texthdr,textobj].';
-    textData = sortrows(textData,1);
+    [Ysort,Isort] = sortrows( cell2mat( textData(:,1) ) );
+    textData = textData(Isort,:);
+    
     % Open up the target file, and read the contents.
     try
       fh = fopen([filename,'.eps'],'r');
       epsfile = fread(fh,inf,'uint8=>char').';
       fh = fclose(fh);
-    catch err
-      if fh
+    catch                  %#ok -- this is required for r2007a support
+      err = lasterror;     %#ok
+      if fh > 0
         fh = close(fh);
       end
-      rethrow(err);
+      rethrow( err );
     end
     % Insert the new text
     findex = regexp(epsfile,'end %%Color Dict');
@@ -907,11 +930,74 @@ end
       fh = fopen([filename,'.eps'],'w');
       fwrite(fh,epsfile);
       fh = fclose(fh);
-    catch err
-      if fh
+    catch                %#ok -- this is required for r2007a support
+      err = lasterror;   %#ok
+      if fh > 0
         fh = fclose(fh);
       end
-      rethrow(err);
+      rethrow( err );
+    end
+  end
+
+% Test to see if there is any text in the figure
+  function NoText = FigureHasNoText(p)
+    NoText = 0;
+    
+    hidden = get(0,'showhiddenhandles');
+    set(0,'showhiddenhandles','on');
+    tempht = findobj(p.Results.handle,'type','text');
+    tempha = findobj(p.Results.handle,'type','axes');
+    set(0,'showhiddenhandles',hidden);
+    
+    tempht = findobj(tempht,'visible','on');
+    tempht_empty = findobj(tempht,'string','');
+    tempht = setxor(tempht,tempht_empty);
+    
+    for kk=tempha
+      if isempty( get(kk,'xticklabel') )
+        if isempty( get(kk,'yticklabel') )
+          if isempty( get(kk,'zticklabel') )
+            tempha = setxor(tempha,kk);
+          end
+        end
+      end
+    end
+    
+    if isempty(tempht) && isempty(tempha)
+      % No Text! Why are you using this then?
+      warning('matlabfrag:noText',['No text in image. You would be better off ',...
+        'using a function like <a href="matlab:web(''http://www.mathworks.com',...
+        '/matlabcentral/fileexchange/10889'',''-browser'')">savefig</a>.\n',...
+        '.tex file will not be created.']);
+      
+      % Set up the figure
+      OrigUnits = get(p.Results.handle,'units');
+      set(p.Results.handle,'units','centimeters');
+      Pos = get(p.Results.handle,'position');
+      OrigPPos = get(p.Results.handle,{'paperunits','paperposition'});
+      set(p.Results.handle,'paperunits','centimeters','paperposition',Pos);
+      
+      % Test to see if the directory (if specified) exists
+      [pathstr,namestr] = fileparts(p.Results.FileName);
+      if ~isempty(pathstr)
+        if ~exist(['./',pathstr],'dir')
+          mkdir(pathstr);
+        end
+        % Tidy up the FileName
+        FileName = [pathstr,filesep,namestr];
+      else
+        FileName = namestr;
+      end
+      
+      % Print the image
+      print(p.Results.handle,'-depsc2',['-',p.Results.renderer],...
+        sprintf('-r%i',p.Results.dpi),'-loose',FileName);
+      
+      % Restore the figure
+      set(p.Results.handle,'units',OrigUnits,'paperunits',...
+        OrigPPos{1},'paperposition',OrigPPos{2});
+      
+      NoText = 1;
     end
   end
 
