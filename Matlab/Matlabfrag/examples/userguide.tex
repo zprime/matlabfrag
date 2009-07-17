@@ -462,16 +462,20 @@ matlabfrag(FileName,OPTIONS)
       an image in a native text format which is needed for the text substitution process. If one of the
       other renderers is used the text becomes rasterised, and hence normally no text replacement can take place.
       
-      As of \matlabfrag\ {\ttfamily v0.6.0}, an {\ttfamily EXPORTFIG} and {\ttfamily epscombine} style hack
+      As of \matlabfrag\ {\ttfamily v0.6.0}\footnote{There have been a series of bug fixes since
+      {\ttfamily v0.6.0}, so I always recommend using the latest version.},
+      an {\ttfamily EXPORTFIG} and {\ttfamily epscombine} style hack
       has been included, which manually places text objects inside rasterised \eps\ images. The result of this
       is that text can now be substituted with LaTeX font and code, but also that all the text now appears
       in the foreground (i.e. all text appears in front of the image, regardless of its placement in the
       original image).
       
       A downside to placing a rasterised image inside an \eps\ file is that it is uncompressed, which creates
-      a very large \eps\ file. During the conversion to {\ttfamily pdf} the image is compressed to a {\ttfamily jpeg}
-      file (unfortunately it can't be compressed to a {\ttfamily png} file using {\ttfamily ps2pdf} to my
-      knowledge), so it is reduced to a reasonable file size (at the expense of some image quality).
+      a very large \eps\ file. However, during the conversion to {\ttfamily pdf} the image is compressed to a
+      reasonable file size.  If you are using \pstoolname, from {\ttfamily v1.3} it defaults to a lossless
+      compression technique similar to \textsc{png}. This is the most suitable compression for technical
+      graphics, but should you prefer it, lossy compression can be turned on. For more information, refer to
+      the \pstoolname\ documentation.
       
       When printing a rasterised image, the resolution is set using the {\ttfamily dpi} option in \matlabfrag.
       The default is 300, which is print quality.
@@ -610,5 +614,30 @@ matlabfrag(FileName,OPTIONS)
        nicely right aligned, and x tick labels should be aligned by the numbers excluding any negative
        sign, if present.}
        \figlabel{test05}
-     \end{figure}     
+     \end{figure}
+     \begin{figure}[ht]
+       \centering
+       \psfragfig{graphics/test06}
+       \caption{Output from {\ttfamily test06.m}; legend movement test. The legend should appear slightly
+         left and down of centre, and be shrunk to not fill its axes.}
+       \figlabel{test06}
+     \end{figure}
+     \begin{figure}[ht]
+       \centering
+       \subfloat{\psfragfig{graphics/test07-painters}}
+       \quad
+       \subfloat{\psfragfig{graphics/test07-opengl}}
+       \caption{Output from {\ttfamily test07.m}; different fonts test. The left image is rendered using
+       painters, while the right is rendered using opengl.}
+       \figlabel{test07}
+     \end{figure}
+     \begin{figure}[ht]
+       \centering
+       \subfloat{\psfragfig{graphics/test08-painters}}
+       \quad
+       \subfloat{\psfragfig{graphics/test08-opengl}}
+       \caption{Output from {\ttfamily test08.m}; No text test. The left image is rendered using
+       painters, while the right is rendered using opengl.}
+       \figlabel{test07}
+     \end{figure}       
 \end{document}
