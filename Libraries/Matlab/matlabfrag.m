@@ -36,7 +36,7 @@
 % ylabel('random','fontsize',14);
 % matlabfrag('RandPlot','epspad',[5,0,0,0]);
 %
-% v0.6.7 24-Aug-2009
+% v0.6.8 24-Aug-2009
 %
 % Please report bugs to <a href="mailto:zebb.prime+matlabfrag@gmail.com">zebb.prime+matlabfrag@gmail.com</a>
 %
@@ -967,15 +967,17 @@ end
     
     hidden = get(0,'showhiddenhandles');
     set(0,'showhiddenhandles','on');
-    tempht = findobj(p.Results.handle,'type','text');
-    tempha = findobj(p.Results.handle,'type','axes');
+    tempht = findobj(p.Results.handle,'type','text','visible','on');
+    tempha = findobj(p.Results.handle,'type','axes','visible','on');
     set(0,'showhiddenhandles',hidden);
+ 
+    for kk=tempht.'
+      if isempty( regexp( get(kk,'string'), '\S', 'once' ));
+        tempht = setxor(tempht,kk);
+      end
+    end
     
-    tempht = findobj(tempht,'visible','on');
-    tempht_empty = findobj(tempht,'string','');
-    tempht = setxor(tempht,tempht_empty);
-    
-    for kk=tempha
+    for kk=tempha.'
       if isempty( get(kk,'xticklabel') )
         if isempty( get(kk,'yticklabel') )
           if isempty( get(kk,'zticklabel') )
