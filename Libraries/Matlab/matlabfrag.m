@@ -36,7 +36,7 @@
 % ylabel('random','fontsize',14);
 % matlabfrag('RandPlot','epspad',[5,0,0,0]);
 %
-% v0.6.6 16-Jul-2009
+% v0.6.7 24-Aug-2009
 %
 % Please report bugs to <a href="mailto:zebb.prime+matlabfrag@gmail.com">zebb.prime+matlabfrag@gmail.com</a>
 %
@@ -481,7 +481,8 @@ end
           ticklabelcell = mat2cell(ticklabels,ones(1,size(ticklabels,1)),size(ticklabels,2));
           if all(~isnan(str2double(ticklabelcell)))
             % If so, make the labels read 10^<TickLabel>
-            ticklabels = cellfun(@(x) ['$10^{',x,'}$'], ticklabelcell,'uniformoutput',0);
+            ticklabels = cellfun(@(x) ['$10^{',RemoveSpaces(x),'}$'],...
+              ticklabelcell,'uniformoutput',0);
           end
           
           % Test to see if there is a common factor
@@ -628,23 +629,36 @@ end
         end
         
         % Test whether all of the ticks are numbers, if so wrap them in $
+        if ~iscell(ticklabels)
+          ticklabels = mat2cell(ticklabels,ones(1,size(ticklabels,1)),size(ticklabels,2));
+        end
         TicksAreNumbers = 1;
         for kk=1:size(ticklabels,1)
-          if isnan(str2double(ticklabels(kk,:)))
+          if isempty(ticklabels{kk,:})
+            continue;
+          end
+          if isnan(str2double(ticklabels{kk,:}))
             TicksAreNumbers = 0;
             break;
           end
         end
         if TicksAreNumbers
-          if ~iscell(ticklabels)
-            ticklabels = mat2cell(ticklabels,ones(1,size(ticklabels,1)),size(ticklabels,2));
-          end
           if strcmpi(jj,'x')
-            ticklabels = cellfun(@(x) ['$',...
-              RemoveSpaces( regexprep(x,'-',['\\',NEGXTICK_COMMAND,' ']) ),...
-              '$'], ticklabels,'uniformoutput',0);
+            for kk=1:size(ticklabels)
+              if isempty(ticklabels{kk,:})
+                continue;
+              end
+              ticklabels{kk,:} = ['$',...
+              RemoveSpaces( regexprep(ticklabels{kk,:},'-',['\\',NEGXTICK_COMMAND,' ']) ),...
+              '$'];
+            end
           else
-            ticklabels = cellfun(@(x) ['$', RemoveSpaces(x),'$'],ticklabels,'uniformoutput',0);
+            for kk=1:size(ticklabels)
+              if isempty(ticklabels{kk,:})
+                continue;
+              end
+              ticklabels{kk,:} = ['$',RemoveSpaces(ticklabels{kk,:}),'$'];
+            end
           end
         end
         clear TicksAreNumbers
@@ -670,8 +684,12 @@ end
         
         % Now process the actual tick labels themselves...
         for kk=1:size(ticklabels,1)
+          if isempty( ticklabels{kk,:} )
+            tickreplacements{kk} = '';
+            continue;
+          end
           tickreplacements{kk} = ReplacementString();
-          AddPsfragCommand(ticklabels(kk,:),tickreplacements{kk},...
+          AddPsfragCommand(ticklabels{kk,:},tickreplacements{kk},...
             tickalignment,FontSize,tickcolour,FontAngle,FontWeight,...
             FixedWidth,[jj,'tick']);
         end
@@ -786,6 +804,10 @@ end
   function cropped_string = RemoveSpaces(string)
     if iscell(string)
       string = string{:};
+    end
+    if isempty( string )
+      cropped_string = string;
+      return;
     end
     I = regexp(string,'[^\s]');
     cropped_string = string(I(1):I(length(I)));
