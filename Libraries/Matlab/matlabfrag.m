@@ -36,7 +36,7 @@
 % ylabel('random','fontsize',14);
 % matlabfrag('RandPlot','epspad',[5,0,0,0]);
 %
-% v0.6.8 24-Aug-2009
+% v0.6.9 07-Oct-2009
 %
 % Please report bugs to <a href="mailto:zebb.prime+matlabfrag@gmail.com">zebb.prime+matlabfrag@gmail.com</a>
 %
@@ -294,7 +294,7 @@ try
       if CurrentlyFixedWidth; Fixed = '\ttfamily';
       else Fixed = ''; end;
       fprintf(fid,['\n%%\n\\providecommand\\%s%s{\\color[rgb]{%.3f,%.3f,'...
-        '%.3f}\\fontsize{%d}{%d}%s%s%s\\selectfont}%%'],FontStylePrefix,...
+        '%.3f}\\fontsize{%d}{%d}%s%s%s\\selectfont\\strut}%%'],FontStylePrefix,...
         char(FontStyleId),CurrentColour(1),CurrentColour(2),...
         CurrentColour(3),CurrentFontSize,CurrentFontSize,Angle,Weight,Fixed);
       NewFontStyle = 0;
@@ -680,6 +680,9 @@ end
               warning('matlabfrag:UnknownAxisLocation',...
                 'Unknown axis location defaulting to ''cr''');
           end
+        else
+        % Fixed Z tick alignment
+          tickalignment = 'cr';
         end
         
         % Now process the actual tick labels themselves...
@@ -972,7 +975,11 @@ end
     set(0,'showhiddenhandles',hidden);
  
     for kk=tempht.'
-      if isempty( regexp( get(kk,'string'), '\S', 'once' ));
+      temptext = get(kk,'string');
+      if ischar(temptext)
+        temptext = mat2cell(temptext,ones(1,size(temptext,1)));
+      end
+      if isempty( regexp( temptext, '\S', 'once' ));
         tempht = setxor(tempht,kk);
       end
     end
