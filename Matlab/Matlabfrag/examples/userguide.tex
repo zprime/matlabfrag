@@ -3,7 +3,7 @@
 \usepackage[T1]{fontenc}\usepackage{lmodern}\usepackage[sc]{mathpazo}\linespread{1.1}% Palatino font
 \usepackage[colorlinks,urlcolor=black,linkcolor=black]{hyperref}
 \usepackage{upquote,fancyvrb,subfig,microtype,sistyle,refstyle,wasysym}
-\usepackage[process=auto,crop=preview]{pstool}
+\usepackage[process=auto,crop=pdfcrop]{pstool}
 
 \newcommand\ytick[1]{\ensuremath{\mathcal R(e^{#1 i})}}
 
@@ -120,8 +120,8 @@ matlabfrag(FileName,OPTIONS)
       See \Figref{ex01} for the output.
       \begin{figure}[ht]
         \centering
-        \subfloat[graphics/ex01-1]{\fbox{\psfragfig{graphics/ex01-1}}}\quad
-        \subfloat[graphics/ex01-2]{\fbox{\psfragfig{graphics/ex01-2}}}
+        \subfloat[graphics/ex01-1]{\fbox{\psfragfig[crop=preview]{graphics/ex01-1}}}\quad
+        \subfloat[graphics/ex01-2]{\fbox{\psfragfig[crop=preview]{graphics/ex01-2}}}
         \caption{\matlabfrag\ options example showing the {\ttfamily epspad} option at work.}
         \figlabel{ex01}
       \end{figure}
@@ -500,7 +500,7 @@ matlabfrag(FileName,OPTIONS)
       \par{\verb|examples/ex17.m|}\par\noindent
       which is largely based off of the ``Moving the Camera Through a Scene'' example in the \matlab\
       documentation. An extract of this example is:
-      \VerbatimInput[firstline=40,lastline=44]{ex17.m}
+      \VerbatimInput[firstline=41,lastline=45]{ex17.m}
       The output from this example is given in \Figref{ex17}.
       \begin{figure}[ht]
         \centering
@@ -624,20 +624,21 @@ matlabfrag(FileName,OPTIONS)
      \end{figure}
      \begin{figure}[ht]
        \centering
-       \subfloat{\psfragfig{graphics/test07-painters}}
+       \subfloat{\psfragfig[crop=preview]{graphics/test07-painters}}
        \quad
-       \subfloat{\psfragfig{graphics/test07-opengl}}
+       \subfloat{\psfragfig[crop=preview]{graphics/test07-opengl}}
        \caption{Output from {\ttfamily test07.m}; different fonts test. The left image is rendered using
        painters, while the right is rendered using opengl.}
        \figlabel{test07}
      \end{figure}
      \begin{figure}[ht]
        \centering
-       \subfloat{\psfragfig{graphics/test08-painters}}
+       \subfloat{\psfragfig[crop=preview]{graphics/test08-painters}}
        \quad
-       \subfloat{\psfragfig{graphics/test08-opengl}}
+       \subfloat{\psfragfig[crop=preview]{graphics/test08-opengl}}
        \caption{Output from {\ttfamily test08.m}; No text test. The left image is rendered using
-       painters, while the right is rendered using opengl.}
+       painters, while the right is rendered using opengl. The difference in alignment is caused
+       by the }
        \figlabel{test08}
      \end{figure}
      \begin{figure}
@@ -646,5 +647,11 @@ matlabfrag(FileName,OPTIONS)
        \caption{Output from {\ttfamily test09.m}; some empty tick labels test. Some of the tick labels
        in both the $x$ and $y$ axes should be empty.}
        \figlabel{test09}
+     \end{figure}
+     \begin{figure}
+       \centering
+       \psfragfig{graphics/test10}
+       \caption{Output from {\ttfamily test10.m}; x-tick label vertical alignment test.}
+       \figlabel{test10}
      \end{figure}
 \end{document}

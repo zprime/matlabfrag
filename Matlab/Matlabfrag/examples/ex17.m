@@ -35,6 +35,7 @@ i=110;
 campos([xd(i),yd(i),zd(i)])
 camtarget([xd(i+5)+min(xd)/100,yd(i),zd(i)])
 camlight(hlight,'headlight')
+set(gca,'xticklabel','','yticklabel','','zticklabel','');
 drawnow
 %% Everything below appears in userguide
 lighting phong;
