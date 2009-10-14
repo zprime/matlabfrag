@@ -537,7 +537,6 @@ matlabfrag(FileName,OPTIONS)
      have to modify the tick labels to make it possible for \psfragname\ to do text substitution, thus
      we have to manually recreate this scaling. In \matlabfrag\ this is performed by detecting when:
      \begin{enumerate}
-       \item {\ttfamily xtickmode} is set to {\ttfamily auto},
        \item {\ttfamily xticklabelmode} is set to {\ttfamily auto}, and
        \item there is a scaling value between the {\ttfamily xtick} and {\ttfamily xticklabel} that is
          equal to a power of ten.
@@ -555,22 +554,7 @@ matlabfrag(FileName,OPTIONS)
        \caption{Axis scale positions for all permutations of the x and y axis locations.}
        \figlabel{ex12}
      \end{figure}
-     
-     The inbuilt \matlab\ function {\ttfamily plotyy} can create figures with scaling values while
-     manually putting in y tick labels (hence {\ttfamily xticklabelmode} is {\ttfamily auto}).
-     Unfortunately I don't understand how this works (if someone cares to elighten me, please do), but
-     by resetting the {\ttfamily xticklabelmode} to {\ttfamily auto} \matlabfrag\ is able to
-     automatically recreate the scaling values. An example of how to do this is given in\par
-     {\verb|example/ex13.m|}\par\noindent
-     and an example output is given in \Figref{ex13}.
-     \begin{figure}[ht]
-       \centering
-       \psfragfig{graphics/ex13}
-       \caption{Output from the {\ttfamily plotyy} function, slightly modified to make \matlabfrag\
-         automatically generate the y axis scaling values.}
-       \figlabel{ex13}
-     \end{figure}
-     
+       
      Lastly, support for tick scaling in three-dimensional plots has been added to \matlabfrag\ for
      the default orientation of {\ttfamily surf} plots, such as that shown previously in
      \Figref{comparison02}. If you start to rotate the orientation of the plot it will probably break
@@ -637,8 +621,7 @@ matlabfrag(FileName,OPTIONS)
        \quad
        \subfloat{\psfragfig[crop=preview]{graphics/test08-opengl}}
        \caption{Output from {\ttfamily test08.m}; No text test. The left image is rendered using
-       painters, while the right is rendered using opengl. The difference in alignment is caused
-       by the }
+       painters, while the right is rendered using opengl.}
        \figlabel{test08}
      \end{figure}
      \begin{figure}
@@ -653,5 +636,11 @@ matlabfrag(FileName,OPTIONS)
        \psfragfig{graphics/test10}
        \caption{Output from {\ttfamily test10.m}; x-tick label vertical alignment test.}
        \figlabel{test10}
+     \end{figure}
+     \begin{figure}[ht]
+       \centering
+       \psfragfig{graphics/ex13}
+       \caption{Output from the {\ttfamily ex13.m}; scaling with unusual tick values.}
+       \figlabel{ex13}
      \end{figure}
 \end{document}
