@@ -36,7 +36,7 @@
 % ylabel('random','fontsize',14);
 % matlabfrag('RandPlot','epspad',[5,0,0,0]);
 %
-% v0.6.9 07-Oct-2009
+% v0.6.10 14-Oct-2009
 %
 % Please report bugs to <a href="mailto:zebb.prime+matlabfrag@gmail.com">zebb.prime+matlabfrag@gmail.com</a>
 %
@@ -486,7 +486,7 @@ end
           end
           
           % Test to see if there is a common factor
-        elseif strcmpi(get(handle,[jj,'scale']),'linear') && AutoTick.(jj) && AutoTickLabel.(jj)
+        elseif strcmpi(get(handle,[jj,'scale']),'linear') && AutoTickLabel.(jj)
           for kk=1:size(ticklabels,1)
             % Find the first non-NaN ratio between tick labels and tick
             % values
@@ -497,7 +497,12 @@ end
           % If the scale is not 1, then we need to place a marker near the
           % axis
           if abs(scale-1) > 1e-3
-            LatexScale = ['$\times10^{',num2str(log10(scale)),'}$'];
+            scale = log10(scale);
+            % Make sure it is an integer.
+            assert( abs(scale-round(scale))<1e-2, 'matlabfrag:AxesScaling:NonInteger',...
+              ['Non integer axes scaling.  This is most likely a bug in matlabfrag.\n',...
+              'Please let me know the ytick and yticklabel values for this plot.']);
+            LatexScale = ['$\times10^{',num2str(round(scale)),'}$'];
             % Test to see if this is a 3D or 2D plot
             if isempty(get(handle,'zticklabel')) &&...
                 all( get(handle,'view') == [0 90] )
