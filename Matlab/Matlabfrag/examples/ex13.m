@@ -2,14 +2,18 @@
 hfig = figure;
 set(hfig,'units','centimeters','NumberTitle','off','Name','ex13');
 pos = get(hfig,'position');
-set(hfig,'position',[pos(1:2),6,4]);
+set(hfig,'position',[pos(1:2),7,5]);
 %% Everything below appears in userguide
-y1 = 1e-6*rand(1,2);
-y2 = 1e-6*rand(1,2);
-x = [0 1e-3];
-hax = plotyy(x,y1,x,y2);
-set(hax(1),'xtick',1e-3*[0 7/32 1/2 47/64 1]);
-set(hax(2),'ylim',[0 1e-6],'ytick',1e-6*[0 1/3 2/3 1],'yticklabelmode','auto');
-set(hax(2),'xticklabel','');
+[x,y,z] = peaks(20);
+surf(x.*1e-3,y.*1e-3,z);
+% placed inside the label, need to set xticklabelmode to manual
+xlabel('x axis ($x10^{-3}$)','interpreter','latex',...
+  'userdata','matlabfrag:x axis $\left(\times10^{-3}\right)$');
+set(gca,'xticklabelmode','manual');
+% manually placed as a text object:
+ylabel('ylabel');
+set(gca,'yticklabelmode','manual');
+text(-10e-3,0,-10,'$x10^{-3}$','interpreter','latex',...
+  'userdata','matlabfrag:$\times10^{-3}$');
 %% The following is excluded from userguide
 matlabfrag('graphics/ex13');

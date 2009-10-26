@@ -14,12 +14,12 @@ else
   warning('run_all:noLaPrint','LaPrint not found. Skipping the comparisons');
 end
 %% Run the scripts
-numExamples = 17;
+numExamples = 16;
 for ii=1:numExamples
   run( sprintf('ex%02i',ii) );
 end
 %% Run the extra testing scripts
-numTests=10;
+numTests=12;
 for ii=1:numTests
   run( sprintf('test%02i',ii) );
 end

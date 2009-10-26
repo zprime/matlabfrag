@@ -360,13 +360,13 @@ matlabfrag(FileName,OPTIONS)
       When \matlabfrag\ fails to insert the scaling properly, I suggest you manually modify the
       axis ticks, and place the scaling in either the axis label, or place it manually as a text
       object. Example code for doing this is:
-      \VerbatimInput[firstline=7,lastline=17]{ex14.m}
-      See \Figref{ex14} for the output.
+      \VerbatimInput[firstline=7,lastline=17]{ex13.m}
+      See \Figref{ex13} for the output.
       \begin{figure}[ht]
         \centering
-        \psfragfig{graphics/ex14}
+        \psfragfig{graphics/ex13}
         \caption{Manually inserted axis scalings.}
-        \figlabel{ex14}
+        \figlabel{ex13}
       \end{figure}
       You can read more about why this is necessary in \Secref{adv-axis}.
 	  
@@ -485,29 +485,29 @@ matlabfrag(FileName,OPTIONS)
       or the {\ttfamily renderer} option is set in \matlabfrag.
       
       An example of choosing the renderer in \matlabfrag, and increasing the image DPI is given in
-      \par{\verb|examples/ex16.m|}\par\noindent
+      \par{\verb|examples/ex15.m|}\par\noindent
       an extract of which is:
-      \VerbatimInput[firstline=7,lastline=15]{ex16.m}
-      The output for this example is given in \Figref{ex16}.
+      \VerbatimInput[firstline=7,lastline=15]{ex15.m}
+      The output for this example is given in \Figref{ex15}.
       \begin{figure}[ht]
         \centering
-        \psfragfig{graphics/ex16}
+        \psfragfig{graphics/ex15}
         \caption{Example showing the use of the {\ttfamily OpenGL} renderer.}
-        \figlabel{ex16}
+        \figlabel{ex15}
       \end{figure}
       
       An example showing \matlabfrag\ detecting a manually set renderer is given in
-      \par{\verb|examples/ex17.m|}\par\noindent
+      \par{\verb|examples/ex16.m|}\par\noindent
       which is largely based off of the ``Moving the Camera Through a Scene'' example in the \matlab\
       documentation. An extract of this example is:
-      \VerbatimInput[firstline=41,lastline=45]{ex17.m}
-      The output from this example is given in \Figref{ex17}.
+      \VerbatimInput[firstline=41,lastline=45]{ex16.m}
+      The output from this example is given in \Figref{ex16}.
       \begin{figure}[ht]
         \centering
-        \psfragfig{graphics/ex17}
+        \psfragfig{graphics/ex16}
         \caption{Example output when the renderer is set to {\ttfamily zbuffer} and shading set to
         {\ttfamily phong}.}
-        \figlabel{ex17}
+        \figlabel{ex16}
       \end{figure}
       
    \section{Advanced usage: a discussion on axis ticks}\seclabel{adv-axis}%
@@ -518,15 +518,15 @@ matlabfrag(FileName,OPTIONS)
      \matlabfrag\ handles this case by detecting whether {\ttfamily xscale} is set to {\ttfamily log}, and
      {\ttfamily xticklabelmode} is set to {\ttfamily auto}. If so, it automatically inserts the appropriate
      LaTeX code. A simple example of this behaviour can be shown with the code:
-     \VerbatimInput[firstline=7,lastline=8]{ex15.m}
-     which produces \Figref{ex15}.
+     \VerbatimInput[firstline=7,lastline=8]{ex14.m}
+     which produces \Figref{ex14}.
      \begin{figure}[ht]
        \centering
-       \psfragfig{graphics/ex15}
+       \psfragfig{graphics/ex14}
        \caption{An example {\ttfamily bodemag} plot demonstrating ticks of the format $10^x$. Note that
          the axis tick labels are grey. This is due to the {\ttfamily bodemag} function setting them grey
          using the {\ttfamily xcolor} and {\ttfamily ycolor} axis properties.}
-       \figlabel{ex15}
+       \figlabel{ex14}
      \end{figure}
      
      The above case is fairly simple in comparison to how \matlab\ handles axes that have been scaled by
@@ -562,85 +562,4 @@ matlabfrag(FileName,OPTIONS)
      as a text object. Please read through \Secref{axis-scaling} for some information and an example
      of how to do this.
      
-   \section{Additional tests}\seclabel{testing}%
-     The examples above don't just serve as examples for new users, they also form part of my testing
-     suite for \matlabfrag. Below are some additional tests which are mainly for my development
-     purposes.
-     \begin{figure}[ht]
-       \centering
-       \psfragfig{graphics/test01}
-       \caption{Output from {\ttfamily test01.m}; making sure multiple legend lines are printed properly.}
-       \figlabel{test01}
-     \end{figure}
-     \begin{figure}[ht]
-       \centering
-       \psfragfig{graphics/test02}
-       \caption{Output from {\ttfamily test02.m}; testing italic font for the main axes property. The
-       tick labels aren't italic because they've been rendered in math mode.}
-       \figlabel{test02}
-     \end{figure}
-     \begin{figure}[ht]
-       \centering
-       \psfragfig{graphics/test03}
-       \caption{Output from {\ttfamily test03.m}; bold and fixed-width test with multiple legend entries.}
-       \figlabel{test03}
-     \end{figure}
-     \begin{figure}[ht]
-       \centering
-       \psfragfig{graphics/test04}
-       \caption{Output from {\ttfamily test04.m}; tick labels entered as cells.}
-       \figlabel{test04}
-     \end{figure}
-     \begin{figure}[ht]
-       \centering
-       \psfragfig{graphics/test05}
-       \caption{Output from {\ttfamily test05.m}; tick label alignment test. Y tick labels should be
-       nicely right aligned, and x tick labels should be aligned by the numbers excluding any negative
-       sign, if present.}
-       \figlabel{test05}
-     \end{figure}
-     \begin{figure}[ht]
-       \centering
-       \psfragfig{graphics/test06}
-       \caption{Output from {\ttfamily test06.m}; legend movement test. The legend should appear slightly
-         left and down of centre, and be shrunk to not fill its axes.}
-       \figlabel{test06}
-     \end{figure}
-     \begin{figure}[ht]
-       \centering
-       \subfloat{\psfragfig[crop=preview]{graphics/test07-painters}}
-       \quad
-       \subfloat{\psfragfig[crop=preview]{graphics/test07-opengl}}
-       \caption{Output from {\ttfamily test07.m}; different fonts test. The left image is rendered using
-       painters, while the right is rendered using opengl.}
-       \figlabel{test07}
-     \end{figure}
-     \begin{figure}[ht]
-       \centering
-       \subfloat{\psfragfig[crop=preview]{graphics/test08-painters}}
-       \quad
-       \subfloat{\psfragfig[crop=preview]{graphics/test08-opengl}}
-       \caption{Output from {\ttfamily test08.m}; No text test. The left image is rendered using
-       painters, while the right is rendered using opengl.}
-       \figlabel{test08}
-     \end{figure}
-     \begin{figure}
-       \centering
-       \psfragfig{graphics/test09}
-       \caption{Output from {\ttfamily test09.m}; some empty tick labels test. Some of the tick labels
-       in both the $x$ and $y$ axes should be empty.}
-       \figlabel{test09}
-     \end{figure}
-     \begin{figure}
-       \centering
-       \psfragfig{graphics/test10}
-       \caption{Output from {\ttfamily test10.m}; x-tick label vertical alignment test.}
-       \figlabel{test10}
-     \end{figure}
-     \begin{figure}[ht]
-       \centering
-       \psfragfig{graphics/ex13}
-       \caption{Output from the {\ttfamily ex13.m}; scaling with unusual tick values.}
-       \figlabel{ex13}
-     \end{figure}
 \end{document}
