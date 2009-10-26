@@ -225,7 +225,7 @@ matlabfrag(FileName,OPTIONS)
       in the final document. This way the figure does not need to be resized at any stage, which prevents
       line sizes changing, text over-running borders, etc.  This can be done within \matlab\ using:
       \VerbatimInput[firstline=4,lastline=10]{ex03.m}
-      See \Figref{ex03} for the output.
+      See \Figref{ex03} for the output from this example, {\ttfamily examples/ex03.m}.
       \begin{figure}[ht]
         \centering
         \psfragfig{graphics/ex03}
@@ -238,7 +238,7 @@ matlabfrag(FileName,OPTIONS)
       \matlabfrag\ will respect the colour set in \matlab, but may require that you load the {\ttfamily color}
       package in LaTeX (\pstoolname\ implicitly loads the {\ttfamily color} package).
       \VerbatimInput[firstline=7,lastline=11]{ex04.m}
-      See \Figref{ex04} for the output.
+      See \Figref{ex04} for the output from this example, {\ttfamily examples/ex04.m}.
       \begin{figure}[ht]
         \centering
         \psfragfig{graphics/ex04}
@@ -250,7 +250,7 @@ matlabfrag(FileName,OPTIONS)
       All text in \matlab\ figures has a {\ttfamily FontSize} property which \matlabfrag\ respects; the size
       specified in the figure is the size it will be in the LaTeX output document.
       \VerbatimInput[firstline=7,lastline=11]{ex05.m}
-      See \Figref{ex05} for the output.
+      See \Figref{ex05} for the output from this example, {\ttfamily examples/ex05.m}.
       \begin{figure}[ht]
         \centering
         \psfragfig{graphics/ex05}
@@ -264,7 +264,7 @@ matlabfrag(FileName,OPTIONS)
       {\ttfamily FontAngle} in that {\ttfamily italic} and {\ttfamily oblique} will be italic in the LaTeX output
       document.
       \VerbatimInput[firstline=7,lastline=11]{ex06.m}
-      See \Figref{ex06} for the output.
+      See \Figref{ex06} for the output from this example, {\ttfamily examples/ex06.m}.
       \begin{figure}[ht]
         \centering
         \psfragfig{graphics/ex06}
@@ -277,7 +277,7 @@ matlabfrag(FileName,OPTIONS)
       that any text set to {\ttfamily bold} will be made bold in the output LaTeX document. {\ttfamily light},
       {\ttfamily demi} and {\ttfamily normal} have no effect on the font in the LaTeX output.
       \VerbatimInput[firstline=7,lastline=12]{ex07.m}
-      See \Figref{ex07} for the output.
+      See \Figref{ex07} for the output from this example, {\ttfamily examples/ex07.m}.
       \begin{figure}[ht]
         \centering
         \psfragfig{graphics/ex07}
@@ -293,7 +293,7 @@ matlabfrag(FileName,OPTIONS)
       {\ttfamily FixedWidth}, in which case the font in the output LaTeX document will be fixed-width (i.e.,
       \verb|\ttfamily|).
       \VerbatimInput[firstline=7,lastline=11]{ex08.m}
-      See \Figref{ex08} for the output.
+      See \Figref{ex08} for the output from this example, {\ttfamily examples/ex08.m}.
       \begin{figure}[ht]
         \centering
         \psfragfig{graphics/ex08}
@@ -310,7 +310,7 @@ matlabfrag(FileName,OPTIONS)
       
       The {\ttfamily latex} interpreter is especially useful for rendering mathematical formula.
       \VerbatimInput[firstline=7,lastline=11]{ex09.m}
-      See \Figref{ex09} for the output.
+      See \Figref{ex09} for the output from this example, {\ttfamily examples/ex09.m}.
 	    \begin{figure}[ht]
 	      \centering
 		  \psfragfig{graphics/ex09}
@@ -328,7 +328,7 @@ matlabfrag(FileName,OPTIONS)
       {\ttfamily UserData} property, you will need to manually put the {\ttfamily tabular} environment in, as
       \matlabfrag\ will ignore any {\ttfamily UserData} that is not a string.
       \VerbatimInput[firstline=7,lastline=13]{ex10.m}
-      See \Figref{ex10} for the output.
+      See \Figref{ex10} for the output from this example, {\ttfamily examples/ex10.m}.
       \begin{figure}[ht]
         \centering
         \psfragfig{graphics/ex10}
@@ -343,12 +343,40 @@ matlabfrag(FileName,OPTIONS)
       \par{\verb|\newcommand\ytick[1]{\ensuremath{\mathcal R(e^{#1 i})}}|}\par\noindent
       The \matlab\ example code is:
       \VerbatimInput[firstline=7,lastline=12]{ex11.m}
-      See \Figref{ex11} for the output.
+      See \Figref{ex11} for the output from this example, {\ttfamily examples/ex11.m}.
       \begin{figure}[ht]
         \centering
         \psfragfig{graphics/ex11}
         \caption{Custom tick label example.}
         \figlabel{ex11}
+      \end{figure}
+      
+    \subsection{Legends}\seclabel{legends}%
+      Legends can, with a bit of manipulation, be used in exactly the same way as other text objects.
+      
+      If LaTeX strings are entered into the legend, the LaTeX interpreter can be turned
+      on using the legend handle directly:
+      \begin{verbatim}
+hleg = legend($\ddot\alpha$,$\ddot\beta$);
+set(hleg,'interpreter','latex');
+      \end{verbatim}
+      
+      To use the \matlabfrag\ {\ttfamily userdata} auto-substitution feature with legend texts,
+      the text objects inside the legend need to be accessed directly.  Each legend entry
+      appears as three child objects of the legend ({\ttfamily line}, {\ttfamily marker} and
+      {\ttfamily text} in that order), and the entries are in reverse order to that which
+      they were entered into {\ttfamily legend} as. Knowing this order, the {\ttfamily userdata}
+      property of the text objects can be set:
+      \VerbatimInput[firstline=7,lastline=11]{ex12.m}
+      If each legend string is unique, then another method is find the text object is to use
+      the {\ttfamily findobj} function in \matlab.
+      \VerbatimInput[firstline=12,lastline=13]{ex12.m}
+      The output from this example, {\ttfamily examples/ex12.m}, is given in \Figref{ex12}.
+      \begin{figure}
+        \centering
+        \psfragfig{graphics/ex12}
+        \caption{Using the {\ttfamily userdata} feature with legends.}
+        \figlabel{ex12}
       \end{figure}
       
     \subsection{Tick scaling values}\seclabel{axis-scaling}%
@@ -361,7 +389,7 @@ matlabfrag(FileName,OPTIONS)
       axis ticks, and place the scaling in either the axis label, or place it manually as a text
       object. Example code for doing this is:
       \VerbatimInput[firstline=7,lastline=17]{ex13.m}
-      See \Figref{ex13} for the output.
+      See \Figref{ex13} for the output from this example, {\ttfamily examples/ex13.m}.
       \begin{figure}[ht]
         \centering
         \psfragfig{graphics/ex13}
@@ -404,6 +432,37 @@ matlabfrag(FileName,OPTIONS)
       \subsection{I get a warning in \matlab!}
         Warnings created by \matlabfrag\ are there for a reason. Read through them, as they explain what
         the problem is and what \matlabfrag\ is doing about it.
+        
+      \subsection{I get the {\ttfamily Unable to interpret TeX string} warning in \matlab!}
+        This warning occurs when the TeX or LaTeX interpreter (whichever is chosen) cannot
+        interpret the string, and can be caused by calling macros which don't exist in
+        the version of LaTeX that ships with \matlab\ or by trying to interpret a LaTeX string
+        with the TeX interpreter (and vice versa).
+      
+        To troubleshoot, ensure the string is correct, and the appropriate interpreter is used.
+        An example known to work is:
+        \begin{verbatim}
+title('Force versus $\sin(\alpha)$','interpreter','latex');
+        \end{verbatim}
+        The {\ttfamily none} interpreter can also be used, however the box around the text may end up
+        a very different size to the final text. The following example also works, but the bounding box
+        in \matlab\ is much wider than in the final document:
+        \begin{verbatim}
+title('Force versus $\sin(\alpha)$','interpreter','none');
+        \end{verbatim}
+        Another alternative is to use the {\ttfamily userdata}
+        feature of \matlabfrag\ with a placeholder for the screen text. A working example is:
+        \begin{verbatim}
+title('Force versus sin(a)','userdata',...
+  'matlabfrag:Force versus $\sin(\alpha)$');
+        \end{verbatim}
+        This is also a good option for using macros that aren't included with the version of LaTeX
+        that ships with \matlab. For example, in \Secref{legends}, the \verb|\SI| macro is used to format the
+        numbers and units. The package that provides this command, {\ttfamily sistyle}, is loaded
+        in the preamble of this document.
+      
+        As this warning has to do with the way \matlab\ renders text on screen and not \matlabfrag,
+        please do not contact me about it.
       
       \subsection{My graphic exports from \matlab\ fine, but does not compile in LaTeX/pdfLaTeX/LyX!}
 	    \begin{enumerate}
@@ -485,29 +544,29 @@ matlabfrag(FileName,OPTIONS)
       or the {\ttfamily renderer} option is set in \matlabfrag.
       
       An example of choosing the renderer in \matlabfrag, and increasing the image DPI is given in
-      \par{\verb|examples/ex15.m|}\par\noindent
+      \par{\verb|examples/ex14.m|}\par\noindent
       an extract of which is:
-      \VerbatimInput[firstline=7,lastline=15]{ex15.m}
-      The output for this example is given in \Figref{ex15}.
+      \VerbatimInput[firstline=7,lastline=15]{ex14.m}
+      The output for this example is given in \Figref{ex14}.
       \begin{figure}[ht]
         \centering
-        \psfragfig{graphics/ex15}
+        \psfragfig{graphics/ex14}
         \caption{Example showing the use of the {\ttfamily OpenGL} renderer.}
-        \figlabel{ex15}
+        \figlabel{ex14}
       \end{figure}
       
       An example showing \matlabfrag\ detecting a manually set renderer is given in
-      \par{\verb|examples/ex16.m|}\par\noindent
+      \par{\verb|examples/ex15.m|}\par\noindent
       which is largely based off of the ``Moving the Camera Through a Scene'' example in the \matlab\
       documentation. An extract of this example is:
-      \VerbatimInput[firstline=41,lastline=45]{ex16.m}
-      The output from this example is given in \Figref{ex16}.
+      \VerbatimInput[firstline=41,lastline=45]{ex15.m}
+      The output from this example is given in \Figref{ex15}.
       \begin{figure}[ht]
         \centering
-        \psfragfig{graphics/ex16}
+        \psfragfig{graphics/ex15}
         \caption{Example output when the renderer is set to {\ttfamily zbuffer} and shading set to
         {\ttfamily phong}.}
-        \figlabel{ex16}
+        \figlabel{ex15}
       \end{figure}
       
    \section{Advanced usage: a discussion on axis ticks}\seclabel{adv-axis}%
@@ -518,15 +577,15 @@ matlabfrag(FileName,OPTIONS)
      \matlabfrag\ handles this case by detecting whether {\ttfamily xscale} is set to {\ttfamily log}, and
      {\ttfamily xticklabelmode} is set to {\ttfamily auto}. If so, it automatically inserts the appropriate
      LaTeX code. A simple example of this behaviour can be shown with the code:
-     \VerbatimInput[firstline=7,lastline=8]{ex14.m}
-     which produces \Figref{ex14}.
+     \VerbatimInput[firstline=7,lastline=8]{ex16.m}
+     from {\ttfamily examples/ex16.m}, which produces \Figref{ex16}.
      \begin{figure}[ht]
        \centering
-       \psfragfig{graphics/ex14}
+       \psfragfig{graphics/ex16}
        \caption{An example {\ttfamily bodemag} plot demonstrating ticks of the format $10^x$. Note that
          the axis tick labels are grey. This is due to the {\ttfamily bodemag} function setting them grey
          using the {\ttfamily xcolor} and {\ttfamily ycolor} axis properties.}
-       \figlabel{ex14}
+       \figlabel{ex16}
      \end{figure}
      
      The above case is fairly simple in comparison to how \matlab\ handles axes that have been scaled by
@@ -546,13 +605,13 @@ matlabfrag(FileName,OPTIONS)
      difficult.
      
      The locations for all of the scaling values for all permutations of x and y axis locations
-     in a two dimensional plot are shown in \Figref{ex12}. The code for this example is given in:\par
-     {\verb|examples/ex12.m|}.
+     in a two dimensional plot are shown in \Figref{ex17}. The code for this example is given in:\par
+     {\verb|examples/ex17.m|}.
      \begin{figure}[ht]
        \centering
-       \psfragfig{graphics/ex12}
+       \psfragfig{graphics/ex17}
        \caption{Axis scale positions for all permutations of the x and y axis locations.}
-       \figlabel{ex12}
+       \figlabel{ex17}
      \end{figure}
        
      Lastly, support for tick scaling in three-dimensional plots has been added to \matlabfrag\ for
