@@ -36,7 +36,7 @@
 % ylabel('random','fontsize',14);
 % matlabfrag('RandPlot','epspad',[5,0,0,0]);
 %
-% v0.6.10 14-Oct-2009
+% v0.6.11 26-Oct-2009
 %
 % Please report bugs to <a href="mailto:zebb.prime+matlabfrag@gmail.com">zebb.prime+matlabfrag@gmail.com</a>
 %
@@ -442,7 +442,6 @@ end
     end;
     % Make sure figure doesn't resize itself while we are messing with it.
     for jj=['x' 'y' 'z']
-      AutoTick.(jj) = strcmpi(get(handle,[jj,'tickmode']),'auto');
       AutoTickLabel.(jj) = strcmpi(get(handle,[jj,'ticklabelmode']),'auto');
     end
     SetUnsetProperties('TickModes to manual',handle,...
@@ -471,6 +470,10 @@ end
     for jj = ['x' 'y' 'z']
       ticklabels = get(handle,[jj,'ticklabel']);
       ticks = get(handle,[jj,'tick']);
+      % If there are no ticks, skip to the next axis
+      if isempty(ticks)
+        continue;
+      end
       set(handle,[jj,'tickmode'],'manual',[jj,'ticklabelmode'],'manual');
       if ~isempty(ticklabels)
         tickcolour = get(handle,[jj,'color']);
