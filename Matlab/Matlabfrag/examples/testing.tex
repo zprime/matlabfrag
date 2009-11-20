@@ -96,4 +96,14 @@
        \caption{Output from the {\ttfamily test12.m}; scaling with unusual tick values.}
        \figlabel{test12}
      \end{figure}
+          \begin{figure}[ht]
+       \centering
+       \subfloat[graphics/test13a]{ \psfragfig{graphics/test13a} }
+       \quad
+       \subfloat[graphics/test13b]{ \psfragfig{graphics/test13b} }
+       \caption{Output from the {\ttfamily test13.m}; Fixed the weird bug that occurs when
+         manually setting both [xyz]lim and [xyz]tick, with [xyz]tick values outside of [xyz]lim.
+         Both graphics should be identical.}
+       \figlabel{test13}
+     \end{figure}
 \end{document}
