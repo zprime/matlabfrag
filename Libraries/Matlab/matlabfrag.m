@@ -36,7 +36,7 @@
 % ylabel('random','fontsize',14);
 % matlabfrag('RandPlot','epspad',[5,0,0,0]);
 %
-% v0.6.11 26-Oct-2009
+% v0.6.12 20-Nov-2009
 %
 % Please report bugs to <a href="mailto:zebb.prime+matlabfrag@gmail.com">zebb.prime+matlabfrag@gmail.com</a>
 %
@@ -470,9 +470,16 @@ end
     for jj = ['x' 'y' 'z']
       ticklabels = get(handle,[jj,'ticklabel']);
       ticks = get(handle,[jj,'tick']);
+      lims = get(handle,[jj,'lim']);
       % If there are no ticks, skip to the next axis
       if isempty(ticks)
         continue;
+      end
+      % Trim the ticks (if they lay outside lims)
+      if AutoTickLabel.(jj)
+        ticks = ticks( ticks >= lims(1) );
+        ticks = ticks( ticks <= lims(2) );
+        SetUnsetProperties('Trimming tick labels',handle,[jj,'tick'],ticks);
       end
       set(handle,[jj,'tickmode'],'manual',[jj,'ticklabelmode'],'manual');
       if ~isempty(ticklabels)
@@ -708,7 +715,7 @@ end
         SetUnsetProperties('Tick replacement',handle,[jj,'ticklabel'],tickreplacements);
       end
     end
-  end
+  end    % of ProcessTicks
 
 % Get the next replacement string
   function CurrentReplacement = ReplacementString()
