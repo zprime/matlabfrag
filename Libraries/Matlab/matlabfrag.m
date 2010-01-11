@@ -25,8 +25,8 @@
 %                  |  to generate the figure. The default is 'painters'.
 %                  |  If you have manually specified the renderer,
 %                  |  matlabfrag will use this value.
-%    'dpi'         | DPI to print the images at. Default is 300. Note that
-%                  |  this option has little effect when using 'painters'
+%    'dpi'         | DPI to print the images at. Default is 300 for OpenGL
+%                  |  or Z-Buffer images, and 3200 for painters images.
 %
 % EXAMPLE
 % plot(1:10,rand(1,10));
@@ -36,7 +36,7 @@
 % ylabel('random','fontsize',14);
 % matlabfrag('RandPlot','epspad',[5,0,0,0]);
 %
-% v0.6.12 20-Nov-2009
+% v0.6.13 11-Jan-2010
 %
 % Please report bugs to <a href="mailto:zebb.prime+matlabfrag@gmail.com">zebb.prime+matlabfrag@gmail.com</a>
 %
@@ -70,6 +70,7 @@ ACTION_DESC_NAME = @(x) sprintf('d%i',x);
 
 % Debug macro levels
 KEEP_TEMPFILE = 1;
+SHOW_OPTIONS = 1;
 PAUSE_BEFORE_PRINT = 2;
 PAUSE_AFTER_PRINT = 2;
 STEP_THROUGH_ACTIONS = 3;
@@ -78,13 +79,25 @@ p = inputParser;
 p.FunctionName = 'matlabfrag';
 
 p.addRequired('FileName', @(x) ischar(x) );
-p.addOptional('handle', gcf, @(x) ishandle(x) && strcmpi(get(x,'Type'),'figure') );
-p.addOptional('epspad', [0,0,0,0], @(x) isnumeric(x) && (all(size(x) == [1 4])) );
-p.addOptional('renderer', 'painters', ...
+p.addParamValue('handle', gcf, @(x) ishandle(x) && strcmpi(get(x,'Type'),'figure') );
+p.addParamValue('epspad', [0,0,0,0], @(x) isnumeric(x) && (all(size(x) == [1 4])) );
+p.addParamValue('renderer', 'painters', ...
   @(x) any( strcmpi(x,{'painters','opengl','zbuffer'}) ) );
-p.addOptional('dpi', 300, @(x) isnumeric(x) );
-p.addOptional('debuglvl',0, @(x) isnumeric(x) && x>=0);
+p.addParamValue('dpi', 300, @(x) isnumeric(x) );
+p.addParamValue('debuglvl',0, @(x) isnumeric(x) && x>=0);
 p.parse(FileName,varargin{:});
+
+if p.Results.debuglvl >= SHOW_OPTIONS
+  fprintf(1,'OPTION: FileName = %s\n',p.Results.FileName);
+  fprintf(1,'OPTION: handle = %f\n',p.Results.handle);
+  fprintf(1,'OPTION: epspad = [%i %i %i %i]\n',p.Results.epspad);
+  fprintf(1,'OPTION: renderer = %s\n',p.Results.renderer);
+  fprintf(1,'OPTION: dpi = %i\n',p.Results.dpi);
+  fprintf(1,'OPTION: debuglvl = %i\n',p.Results.debuglvl);
+  fprintf(1,'OPTION: Parameters using their defaults:');
+  fprintf(1,' %s',p.UsingDefaults{:});
+  fprintf(1,'\n');
+end
 
 if FigureHasNoText(p)
   return;
@@ -118,13 +131,13 @@ ProcessFigure(p.Results.handle);
 
 % Apply the actions resulting from the processing
 if p.Results.debuglvl >= STEP_THROUGH_ACTIONS
-  disp('Starting to apply actions');
+  disp('STEPPING: Starting to apply actions');
   for ii=1:Actions.length
-    fprintf(1,'Press space to apply: %s\n',Actions.( ACTION_DESC_NAME(ii) ));
+    fprintf(1,'STEPPING: Press space to apply: %s\n',Actions.( ACTION_DESC_NAME(ii) ));
     pause;
     Actions.( ACTION_FUNC_NAME(ii) )();
   end
-  disp('Finished applying actions');
+  disp('STEPPING: Finished applying actions');
 else
   for ii=1:Actions.length
     Actions.( ACTION_FUNC_NAME(ii) )();
@@ -132,7 +145,7 @@ else
 end
 
 if p.Results.debuglvl >= PAUSE_BEFORE_PRINT
-  disp('Paused before printing');
+  disp('PAUSING: Paused before printing');
   pause;
 end
 
@@ -150,14 +163,26 @@ end
 
 dpiswitch = ['-r',num2str( round( p.Results.dpi ) )];
 % Unless over-ridden, check to see if 'renderermode' is 'manual'
-renderer = p.Results.renderer;
+renderer = lower( p.Results.renderer );
 if any( strcmpi(p.UsingDefaults,'renderer') )
   if strcmpi(get(p.Results.handle,'renderermode'),'manual')
-    renderer = get(p.Results.handle,'renderer');
+    renderer = lower( get(p.Results.handle,'renderer') );
+    if p.Results.debuglvl >= SHOW_OPTIONS
+      fprintf(1,['OPTION: Renderer being overridden by manual renderermode.\n',...
+        '        It is now %s.\n'],renderer);
+    end
   end
 end
 
 if strcmpi(renderer,'painters')
+  % If using default dpi
+  if any( strcmpi(p.UsingDefaults,'dpi') )
+    dpiswitch = '-r3200';
+    if p.Results.debuglvl >= SHOW_OPTIONS
+      fprintf(1,['OPTION: Using default DPI and Painters renderer, therefore\n',...
+        '        boosing DPI to 3200.\n']);
+    end
+  end
   % Export the image to an eps file
   drawnow;
   print(p.Results.handle,'-depsc2','-loose',dpiswitch,'-painters',FileName);
@@ -169,7 +194,7 @@ else
 end
 
 if p.Results.debuglvl >= PAUSE_AFTER_PRINT
-  disp('Paused after printing');
+  disp('PAUSING: Paused after printing');
   pause;
 end
 
@@ -207,7 +232,7 @@ end
 drawnow;
 
 % Sort by text size first
-[Y,I] = sortrows( cell2mat( PsfragCmds(:,4) ) );
+[Y,I] = sortrows( cell2mat( PsfragCmds(:,4) ) ); %#ok<*ASGLU> Required for backward compatibility
 PsfragCmds = PsfragCmds(I,:);
 % Now sort by colour
 [Y,I] = sortrows( cell2mat( PsfragCmds(:,5) ), [3 2 1] );
@@ -216,7 +241,7 @@ PsfragCmds = PsfragCmds(I,:);
 [Y,I] = sortrows( cell2mat( PsfragCmds(:,6) ) );
 PsfragCmds = PsfragCmds(I,:);
 % Now sort by font weight
-[Y,I] = sortrows( cell2mat( PsfragCmds(:,7) ) );
+[Y,I] = sortrows( cell2mat( PsfragCmds(:,7) ) );   
 PsfragCmds = PsfragCmds(I,:);
 % Now sort by whether it is 'fixed width'
 [Y,I] = sortrows( cell2mat( PsfragCmds(:,8) ) );
