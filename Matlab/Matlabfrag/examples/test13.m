@@ -7,5 +7,5 @@ set(hfig,'position',[pos(1:2),6,4]);
 plot([0 1],rand(6,2));
 set(gca,'ylim',[0 1],'xlim',[0.2 1],'xtick',0:0.25:1);
 matlabfrag('graphics/test13a');
-set(gca,'xticklabel',{'0.00','0.25','0.50','0.75','1.00'});
+set(gca,'xticklabel',{'0.00','0.25','0.50','0.75','1'});
 matlabfrag('graphics/test13b')

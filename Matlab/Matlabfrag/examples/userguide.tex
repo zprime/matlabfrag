@@ -111,9 +111,9 @@ matlabfrag(FileName,OPTIONS)
         \item[{\'renderer'}] The output renderer. The default is {\ttfamily painters}. The renderer is
           discussed in more detail in \Secref{renderers}.
         \item[{\'dpi'}] The output resolution (DPI or more appropriately, PPI) of the figure.
-          For the {\ttfamily painters} renderer this makes little difference, but is important when
-          using the {\ttfamily opengl} or {\ttfamily zbuffer} renderers. The default is 300. A
-          discussion of renderers is given in \Secref{renderers}.
+          For the {\ttfamily painters} renderer this defaults to 3200, and when
+          using the {\ttfamily opengl} or {\ttfamily zbuffer} renderers the default is 300.
+          A discussion of renderers is given in \Secref{renderers}.
       \end{itemize}
       Some examples are given below.\nobreak
       \VerbatimInput[firstline=7,lastline=12]{ex01.m}
@@ -537,7 +537,10 @@ title('Force versus sin(a)','userdata',...
       the \pstoolname\ documentation.
       
       When printing a rasterised image, the resolution is set using the {\ttfamily dpi} option in \matlabfrag.
-      The default is 300, which is print quality.
+      The default is 300 for {\ttfamily OpenGL} and {\ttfamily Z-Buffer} rendered images, which is usually
+      considered to be print quality.  The default for the {\ttfamily Painters} renderer is 3200. Using a large
+      {\ttfamily dpi} value for {\ttfamily Painters} rendered images reduces quantisation error while only
+      increasing the file size by a small amount.
       
       By default \matlabfrag\ will use the {\ttfamily Painters} renderer unless either the figure has had
       the renderer manually set (which causes the {\ttfamily renderermode} property to become {\ttfamily manual}),
