@@ -36,7 +36,7 @@
 % ylabel('random','fontsize',14);
 % matlabfrag('RandPlot','epspad',[5,0,0,0]);
 %
-% v0.6.13 11-Jan-2010
+% v0.6.14 22-Feb-2010
 %
 % Please report bugs to <a href="mailto:zebb.prime+matlabfrag@gmail.com">zebb.prime+matlabfrag@gmail.com</a>
 %
@@ -852,8 +852,15 @@ end
       cropped_string = string;
       return;
     end
+    if all( string == ' ' )
+      cropped_string = '';
+      return;
+    end
     I = regexp(string,'[^\s]');
-    cropped_string = string(I(1):I(length(I)));
+    cropped_string = string(I(1):I(end));
+    if cropped_string(end) == '\'
+      cropped_string = [ cropped_string, ' ' ];
+    end
   end
 
   function [halign,valign] = GetAlignment(handle)
@@ -867,12 +874,12 @@ end
         halign = 'c';
       otherwise
         warning('matlabfrag:UnknownHorizAlign',...
-          'Unknown text horizontal alignment for "%s", defaulting to left',String);
+          'Unknown text horizontal alignment for "%s", defaulting to left',string);
         halign = 'l';
     end
     VAlign = get(handle,'VerticalAlignment');
     switch VAlign
-      case {'base','bottom'}
+      case {'baseline','bottom','base'}
         valign = 'b';
       case {'top','cap'}
         valign = 't';
@@ -880,7 +887,7 @@ end
         valign = 'c';
       otherwise
         warning('matlabfrag:UnknownVertAlign',...
-          'Unknown text vertical alignment for "%s", defaulting to bottom',String);
+          'Unknown text vertical alignment for "%s", defaulting to bottom',string);
         valign = 'l';
     end
   end
