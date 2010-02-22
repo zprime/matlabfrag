@@ -19,7 +19,7 @@ for ii=1:numExamples
   run( sprintf('ex%02i',ii) );
 end
 %% Run the extra testing scripts
-numTests=13;
+numTests=14;
 for ii=1:numTests
   run( sprintf('test%02i',ii) );
 end
