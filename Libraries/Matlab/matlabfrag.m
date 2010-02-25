@@ -36,7 +36,7 @@
 % ylabel('random','fontsize',14);
 % matlabfrag('RandPlot','epspad',[5,0,0,0]);
 %
-% v0.6.14 22-Feb-2010
+% v0.6.15dev 25-Feb-2010
 %
 % Please report bugs to <a href="mailto:zebb.prime+matlabfrag@gmail.com">zebb.prime+matlabfrag@gmail.com</a>
 %
@@ -177,12 +177,36 @@ end
 if strcmpi(renderer,'painters')
   % If using default dpi
   if any( strcmpi(p.UsingDefaults,'dpi') )
-    dpiswitch = '-r3200';
-    if p.Results.debuglvl >= SHOW_OPTIONS
-      fprintf(1,['OPTION: Using default DPI and Painters renderer, therefore\n',...
-        '        boosing DPI to 3200.\n']);
-    end
+    current_dpi = 3200;
+  else
+    current_dpi = p.Results.dpi;
   end
+    
+  % Test to see whether the DPI is too high or not.
+  temp_units = get(p.Results.handle,'units');
+  set(p.Results.handle,'units','inches');
+  temp_pos = get(p.Results.handle,'position');
+  set(p.Results.handle,'units',temp_units);
+  
+  if temp_pos(3) * current_dpi > 32000
+    old_dpi = current_dpi;
+    current_dpi = 100*floor((30000 / temp_pos(3))/100);
+    warning('matlabfrag:ImageTooWide',...
+      ['Figure width is too large for %i DPI. Reducing\n',...
+      'it to %i DPI.'],old_dpi,current_dpi);
+  end
+  
+  if temp_pos(4) * current_dpi > 32000
+    old_dpi = current_dpi;
+    current_dpi = 100*floor((30000 / temp_pos(4))/100);
+    warning('matlabfrag:defaultDPI:ImageTooHigh',...
+      ['Figure height is too large for %i DPI. Reducing\n',...
+      'it to %i DPI.'],old_dpi,current_dpi);
+  end
+  
+  dpiswitch = sprintf('-r%i',current_dpi);
+  clear temp_units temp_pos current_dpi old_dpi
+
   % Export the image to an eps file
   drawnow;
   print(p.Results.handle,'-depsc2','-loose',dpiswitch,'-painters',FileName);
