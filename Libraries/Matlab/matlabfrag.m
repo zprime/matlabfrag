@@ -36,7 +36,7 @@
 % ylabel('random','fontsize',14);
 % matlabfrag('RandPlot','epspad',[5,0,0,0]);
 %
-% v0.6.15dev 25-Feb-2010
+% v0.6.15 15-Mar-2010
 %
 % Please report bugs to <a href="mailto:zebb.prime+matlabfrag@gmail.com">zebb.prime+matlabfrag@gmail.com</a>
 %
@@ -46,10 +46,14 @@ function matlabfrag(FileName,varargin)
 
 % Matlab version check
 v = version;
-v = sscanf(v,'%i.%i');
-v = eval( sprintf('%i.%i',v(1),v(2)) );
-if v < 7.4
+v = regexp(v,'(\d+)\.(\d+)\.\d+\.\d+','tokens');
+v = str2double(v{1});
+if v(1) < 7
   error('matlabfrag:oldMatlab','Matlabfrag requires Matlab r2007a or newer to run');
+elseif v(1) == 7
+  if v(2) < 4
+    error('matlabfrag:oldMatlab','Matlabfrag requires Matlab r2007a or newer to run');
+  end
 end
 
 % Version information is taken from the above help information
