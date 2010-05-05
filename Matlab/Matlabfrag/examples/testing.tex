@@ -113,11 +113,21 @@
          xlabel, and a space forced with {\ttfamily `$\backslash~$'} for alignment after $0.6$.}
        \figlabel{test14}
      \end{figure}
-     \begin{figure}
+     \begin{figure}[ht]
        \centering
        \psfragfig[width=\linewidth]{graphics/test15}
        \caption{Output from the {\ttfamily test15.m}; For very large images, make sure that the
          16-bit integers in the eps file don't saturate by reducing the painters DPI.}
        \figlabel{test15}
+     \end{figure}
+     \begin{figure}[ht]
+       \centering
+       \subfloat[graphics/test16-fig1]{ \psfragfig{graphics/test16-fig1} }
+       \quad
+       \subfloat[graphics/test16-fig2]{ \psfragfig{graphics/test16-fig2} }
+       \caption{Output from the {\ttfamily test16.m}; when exporting a figure that isn't the
+         current one, axis scaling labels can break. Fig-1 should be scaled to $10^{-3}$, and
+         Fig-2 should be scaled to $10^{-6}$.}
+       \figlabel{test16}
      \end{figure}
 \end{document}

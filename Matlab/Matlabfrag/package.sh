@@ -17,5 +17,6 @@ examples/ex16.m examples/ex17.m \
 examples/test01.m examples/test02.m examples/test03.m \
 examples/test04.m examples/test05.m examples/test06.m examples/test07.m \
 examples/test08.m examples/test09.m examples/test10.m examples/test11.m \
-examples/test12.m examples/test13.m examples/test14.m examples/test15.m
+examples/test12.m examples/test13.m examples/test14.m examples/test15.m \
+examples/test16.m
 rm matlabfrag.m
