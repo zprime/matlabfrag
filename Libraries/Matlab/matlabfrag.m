@@ -36,7 +36,7 @@
 % ylabel('random','fontsize',14);
 % matlabfrag('RandPlot','epspad',[5,0,0,0]);
 %
-% v0.6.15 15-Mar-2010
+% v0.6.16 04-Apr-2010
 %
 % Please report bugs to <a href="mailto:zebb.prime+matlabfrag@gmail.com">zebb.prime+matlabfrag@gmail.com</a>
 %
@@ -578,16 +578,14 @@ end
               YAlignment = get(handle,'YAxisLocation');
               % 2D plot, so only x and y...
               CurrentReplacement = ReplacementString();
-              % Make the axis we are looking at the current one
-              hCA = get(p.Results.handle,'CurrentAxes');
-              set(p.Results.handle,'CurrentAxes',handle);
               
               % X axis scale
               if strcmpi(jj,'x')
                 if strcmpi(XAlignment,'bottom');
                   ht = text(Xlims(2),Ylims(1),CurrentReplacement,...
                     'fontsize',FontSize,'fontname',FontName,...
-                    'HorizontalAlignment','center','VerticalAlignment','top');
+                    'HorizontalAlignment','center','VerticalAlignment','top',...
+                    'parent',handle);
                   extent = get(ht,'extent');
                   position = get(ht,'position');
                   set(ht,'position',[position(1) position(2)-1.0*extent(4) position(3)]);
@@ -595,7 +593,8 @@ end
                 else
                   ht = text(Xlims(2),Ylims(2),CurrentReplacement,...
                     'fontsize',FontSize,'fontname',FontName,...
-                    'HorizontalAlignment','center','VerticalAlignment','bottom');
+                    'HorizontalAlignment','center','VerticalAlignment','bottom',...
+                    'parent',handle);
                   extent = get(ht,'extent');
                   position = get(ht,'position');
                   set(ht,'position',[position(1) position(2)+1.0*extent(4) position(3)]);
@@ -608,11 +607,13 @@ end
                   if strcmpi(YAlignment,'left')
                     ht = text(Xlims(1),Ylims(2),CurrentReplacement,...
                       'fontsize',FontSize,'fontname',FontName,...
-                      'HorizontalAlignment','center','VerticalAlignment','bottom');
+                      'HorizontalAlignment','center','VerticalAlignment','bottom',...
+                      'parent',handle);
                   else
                     ht = text(Xlims(2),Ylims(2),CurrentReplacement,...
                       'fontsize',FontSize,'fontname',FontName,...
-                      'HorizontalAlignment','center','VerticalAlignment','bottom');
+                      'HorizontalAlignment','center','VerticalAlignment','bottom',...
+                      'parent',handle);
                   end
                   extent = get(ht,'extent');
                   position = get(ht,'position');
@@ -622,11 +623,13 @@ end
                   if strcmpi(YAlignment,'left')
                     ht = text(Xlims(1),Ylims(1),CurrentReplacement,...
                       'fontsize',FontSize,'fontname',FontName,...
-                      'HorizontalAlignment','center','VerticalAlignment','top');
+                      'HorizontalAlignment','center','VerticalAlignment','top',...
+                      'parent',handle);
                   else
                     ht = text(Xlims(2),Ylims(1),CurrentReplacement,...
                       'fontsize',FontSize,'fontname',FontName,...
-                      'HorizontalAlignment','center','VerticalAlignment','top');
+                      'HorizontalAlignment','center','VerticalAlignment','top',...
+                      'parent',handle);
                   end
                   extent = get(ht,'extent');
                   position = get(ht,'position');
@@ -635,8 +638,6 @@ end
                 end
               end
               
-              % Restore gca
-              set(p.Results.handle,'CurrentAxes',hCA);
               % Create the replacement command
               AddPsfragCommand(LatexScale,CurrentReplacement,Alignment,FontSize,...
                 tickcolour,FontAngle,FontWeight,FixedWidth,[jj,'scale']);
@@ -651,13 +652,10 @@ end
                 'please let me know at zebb.prime+matlabfrag@gmail.com',...
                 ],jj);
               % :-(
-              % Make the axis we are looking at the current one
-              hCA = get(p.Results.handle,'CurrentAxes');
-              set(p.Results.handle,'CurrentAxes',handle);
               CurrentReplacement = ReplacementString();
-              Xlim = get(gca,'xlim');
-              Ylim = get(gca,'ylim');
-              Zlim = get(gca,'zlim');
+              Xlim = get(handle,'xlim');
+              Ylim = get(handle,'ylim');
+              Zlim = get(handle,'zlim');
               axlen = @(x) x(2)-x(1);
               switch lower( jj )
                 case 'x'
@@ -665,7 +663,7 @@ end
                     Ylim(1)-0.3*axlen(Ylim),...
                     Zlim(1),...
                     CurrentReplacement,'fontsize',FontSize,...
-                    'fontname',FontName);
+                    'fontname',FontName,'parent',handle);
                   Alignment = 'bl';
                 case 'y'
                   ht = text(Xlim(1)-0.3*axlen(Xlim),...
@@ -673,20 +671,18 @@ end
                     Zlim(1),...
                     CurrentReplacement,'fontsize',FontSize,...
                     'fontname',FontName,'horizontalalignment',...
-                    'right');
+                    'right','parent',handle);
                   Alignment = 'br';
                 case 'z'
                   ht = text(Xlim(1),Ylim(2),Zlim(2)+0.2*axlen(Zlim),...
                     CurrentReplacement,'fontsize',FontSize,...
                     'fontname',FontName,'horizontalalignment',...
-                    'right');
+                    'right','parent',handle);
                   Alignment = 'br';
                 otherwise
                   error('matlabfrag:wtf',['Bad axis; this error shouldn''t happen.\n',...
                     'please report it as a bug.']);
               end
-              % Restore gca
-              set(p.Results.handle,'CurrentAxes',hCA);
               % Create the replacement command
               AddPsfragCommand(LatexScale,CurrentReplacement,Alignment,FontSize,...
                 tickcolour,FontAngle,FontWeight,FixedWidth,[jj,'scale']);
