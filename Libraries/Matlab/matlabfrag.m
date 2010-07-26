@@ -36,7 +36,7 @@
 % ylabel('random','fontsize',14);
 % matlabfrag('RandPlot','epspad',[5,0,0,0]);
 %
-% v0.6.16 04-Apr-2010
+% v0.6.16a 20-Jun-2010
 %
 % Please report bugs to <a href="mailto:zebb.prime+matlabfrag@gmail.com">zebb.prime+matlabfrag@gmail.com</a>
 %
@@ -912,7 +912,7 @@ end
       otherwise
         warning('matlabfrag:UnknownVertAlign',...
           'Unknown text vertical alignment for "%s", defaulting to bottom',string);
-        valign = 'l';
+        valign = 'b';
     end
   end
 
