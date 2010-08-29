@@ -9,7 +9,7 @@
  *  This particular algorithm uses an unbalenced binary search tree to
  *  determine if a string exists in the dictionary.
  *
- *  Version 0.1 28-Aug-2010
+ *  Version 0.1 29-Aug-2010
  *
  *  See the license at the bottom of the file.
  */
@@ -38,6 +38,12 @@
 // Maximum string storage space
 #define MAXSTR 1024
 
+/*
+ *  Uncomment one of the following to determine the output format.
+ *  ASCII (ASCII85) output is recommended as it is more compatible with
+ *  programs such as LaTeX, even though the output is 5/4 times larger.
+ */
+//#define RAWOUTPUT
 #define ASCIIOUTPUT
 
 // File pointers
@@ -62,10 +68,11 @@ int Streamout_Ind = 0;
 
 #ifdef RAWOUTPUT
 #undef ASCIIOUTPUT
+
 unsigned int Streamout_Storage = 0;
 
 /**
- *  Write out a variable length bitstream.
+ *  Write out a variable bit-length raw bitstream.
  *  Hopefully endian-independent.
  */
 void streamout( unsigned int x )
@@ -84,7 +91,7 @@ void streamout( unsigned int x )
 }
 
 /**
- *  Cleanup streamout
+ *  Cleanup streamout.  Outputs whatever incomplete characters are present.
  */
 void streamout_cleanup( void )
 {
@@ -92,40 +99,53 @@ void streamout_cleanup( void )
   Streamout_Ind = 0;
   Streamout_Storage = 0;
 }
-#endif
+#endif /* ifdef RAWOUTPUT */
 
 
 #ifdef ASCIIOUTPUT
+
 unsigned int Streamout_Storage = 0;
 // Maximum output width.
 #define OUTPUTWIDTH 75
 unsigned int Streamout_Width = 0;
 
+/**
+ *  Private function to format the output into at max character widths.
+ */
 void prv_put( char x )
 {
   fputc( x, fout );
   Streamout_Width++;
+  // If output is full, print a newline
   if( Streamout_Width == OUTPUTWIDTH )
   {
-    putc( 10, fout );
+    fputc( 10, fout );
     Streamout_Width = 0;
   }
 }
 
+/**
+ *  Takes a variable bit-length raw input stream, and formats it into
+ *  ASCII85 format.
+ */
 void streamout( unsigned int x )
 {
   int shift;
+  // Shift the new data in.
   shift = (32-BitSize-Streamout_Ind);
   if( shift >= 0 ) Streamout_Storage |= (x<<shift);
   else Streamout_Storage |= (x>>-shift);
   
   Streamout_Ind += BitSize;
   
+  // If the buffer is full (i.e. 32-bits) output the 5 characters.
   if( Streamout_Ind >= 32 )
   {
+    // Special case, 0 gets written out as z
     if( Streamout_Storage == 0 ) prv_put( 'z' );
     else
     {
+      // Otherwise, output the 5 characters.
       prv_put( (char)((Streamout_Storage/85/85/85/85)%85+33) );
       prv_put( (char)((Streamout_Storage/85/85/85)%85+33) );
       prv_put( (char)((Streamout_Storage/85/85)%85+33) );
@@ -133,32 +153,38 @@ void streamout( unsigned int x )
       prv_put( (char)((Streamout_Storage)%85+33) );
     }
     Streamout_Ind -= 32;
-//    mexPrintf( "%0.8X\n", Streamout_Storage );
+    // Add any left-over bits to the storage.
     if( Streamout_Ind == 0 ) Streamout_Storage = 0;
     else Streamout_Storage = (x<<(32-Streamout_Ind));
- //   if( Streamout_Storage ) mexPrintf( "ind:%0.8X x:%0.8X Storage:%0.8X\n", Streamout_Ind, x, Streamout_Storage );
   }
 }
 
+/**
+ *  Cleanup the output stream. Outputs whatever partially completed bits
+ *  are present.
+ */
 void streamout_cleanup( void )
 {
+  // Special case, 0 gets written as z
   if( Streamout_Storage == 0 ) prv_put( 'z' );
   else
   {
+    // Otherwise, output the 5 characters.
     prv_put( (char)((Streamout_Storage/85/85/85/85)%85+33) );
     prv_put( (char)((Streamout_Storage/85/85/85)%85+33) );
     prv_put( (char)((Streamout_Storage/85/85)%85+33) );
     prv_put( (char)((Streamout_Storage/85)%85+33) );
     prv_put( (char)((Streamout_Storage)%85+33) );
   }
+  // Cleanup variables, output the 'end of data' string.
   Streamout_Ind = 0;
   Streamout_Storage = 0;
   Streamout_Width = 0;
   fprintf(fout,"~>");
 }
-#endif
+#endif /* ifdef ASCIIOUTPUT */
 
-/*
+/**
  *  Initialise the Index and Dictionary, and output the special
  *  ClearTable character.
  */
@@ -176,7 +202,7 @@ void tableInit( void )
   NextInd = FIRSTFREE;
 }
 
-/*
+/**
  *  Update the Dictionary with new values, and outputs the current prefix.
  */
 void NotInDictionary( unsigned int fromNode, unsigned int from )
@@ -203,7 +229,7 @@ void NotInDictionary( unsigned int fromNode, unsigned int from )
   }
 }
 
-/*
+/**
  *  Main function call in a c-mex environment.
  */
 void mexFunction(int nlhs,mxArray *plhs[],int nrhs,const mxArray *prhs[])
@@ -231,21 +257,6 @@ void mexFunction(int nlhs,mxArray *plhs[],int nrhs,const mxArray *prhs[])
   if( fout == NULL )
       mexErrMsgTxt("Cannot open the output file for writing.\n");
   
- /*
-  // Junk
-  BitSize = 9;
-  streamout( 0x09A );
-  streamout( 0x185 );
-  streamout( 0x173 );
-  streamout( 0x014 );
-  streamout( 0x1AC );
-  streamout( 0x05B );
-  streamout( 0x130 );
-  streamout( 0x100 );
-  fclose(fin); fclose(fout); return;
-  // /Junk
-  */
-  
   if( feof( fin ) )
   {
     fclose(fin);
@@ -269,19 +280,6 @@ void mexFunction(int nlhs,mxArray *plhs[],int nrhs,const mxArray *prhs[])
     fclose(fout);
     mexErrMsgTxt("Unexpected end of file.\n");
   }
-
-  /*
-  // Junk
-  //fgetc( fin );
-  BitSize = 8;
-  fprintf(fout,"\ncurrentfile/ASCII85Decode filter cvx exec\n");
-  while( !feof( fin ) ){
-    streamout( fgetc( fin ) );
-  }
-  streamout_cleanup();
-  fclose(fin); fclose(fout); return;
-  // /Junk
-  */
   
 #ifdef RAWOUTPUT
   fprintf(fout,"\ncurrentfile/LZWDecode filter cvx exec\n");

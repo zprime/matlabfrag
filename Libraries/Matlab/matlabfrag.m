@@ -27,6 +27,8 @@
 %                  |  matlabfrag will use this value.
 %    'dpi'         | DPI to print the images at. Default is 300 for OpenGL
 %                  |  or Z-Buffer images, and 3200 for painters images.
+%    'compress'    | [0|1] - whether to compress the resulting eps or not.
+%                  |   Default is 1 (compression on).
 %
 % EXAMPLE
 % plot(1:10,rand(1,10));
@@ -34,9 +36,9 @@
 % title('badness $\phi$','interpreter','latex','fontweight','bold');
 % xlabel('1 to 10','userdata','matlabfrag:\macro');
 % ylabel('random','fontsize',14);
-% matlabfrag('RandPlot','epspad',[5,0,0,0]);
+% matlabfrag('RandPlot','epspad',[5,0,0,0],'compress',0);
 %
-% v0.6.16a 20-Jun-2010
+% v0.7.0dev 29-Aug-2010
 %
 % Please report bugs to <a href="mailto:zebb.prime+matlabfrag@gmail.com">zebb.prime+matlabfrag@gmail.com</a>
 %
@@ -88,6 +90,7 @@ p.addParamValue('epspad', [0,0,0,0], @(x) isnumeric(x) && (all(size(x) == [1 4])
 p.addParamValue('renderer', 'painters', ...
   @(x) any( strcmpi(x,{'painters','opengl','zbuffer'}) ) );
 p.addParamValue('dpi', 300, @(x) isnumeric(x) );
+p.addParamValue('compress',1, @(x) isnumeric(x) );
 p.addParamValue('debuglvl',0, @(x) isnumeric(x) && x>=0);
 p.parse(FileName,varargin{:});
 
@@ -98,6 +101,7 @@ if p.Results.debuglvl >= SHOW_OPTIONS
   fprintf(1,'OPTION: renderer = %s\n',p.Results.renderer);
   fprintf(1,'OPTION: dpi = %i\n',p.Results.dpi);
   fprintf(1,'OPTION: debuglvl = %i\n',p.Results.debuglvl);
+  fprintf(1,'OPTION: compress = %i\n',p.Results.compress);
   fprintf(1,'OPTION: Parameters using their defaults:');
   fprintf(1,' %s',p.UsingDefaults{:});
   fprintf(1,'\n');
@@ -238,6 +242,22 @@ if any( p.Results.epspad )
   fh = fopen([FileName,'.eps'],'w');
   fwrite(fh,epsfile);
   fclose(fh);
+end
+
+% Compress the eps if requested
+if p.Results.compress
+  if exist('epscompress','file') ~= 3
+    warning('matlabfrag:epscompress:NotFound',...
+      ['Cannot find a compiled version of epscompress, thus the eps\n',...
+      'file will not be compressed. To compile epscompress, navigate\n',...
+      'to the matlabfrag folder and run:\n',...
+      '  >> mex -setup %% If mex hasn''t been setup before\n',...
+      '  >> mex epscompress.c']);
+  else
+    movefile([FileName,'.eps'],[FileName,'-uncompressed.eps']);
+    epscompress([FileName,'-uncompressed.eps'],[FileName,'.eps']);
+    delete([FileName,'-uncompressed.eps']);
+  end
 end
 
 % Apply the undo action to restore the image to how
@@ -1104,3 +1124,28 @@ end
   end
 
 end % of matlabfrag(FileName,p.Results.handle)
+
+% Copyright (c) 2008--2010, Zebb Prime
+% All rights reserved.
+% 
+% Redistribution and use in source and binary forms, with or without
+% modification, are permitted provided that the following conditions are met:
+%     * Redistributions of source code must retain the above copyright
+%       notice, this list of conditions and the following disclaimer.
+%     * Redistributions in binary form must reproduce the above copyright
+%       notice, this list of conditions and the following disclaimer in the
+%       documentation and/or other materials provided with the distribution.
+%     * Neither the name of the organization nor the
+%       names of its contributors may be used to endorse or promote products
+%       derived from this software without specific prior written permission.
+% 
+% THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+% ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+% WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+% DISCLAIMED. IN NO EVENT SHALL ZEBB PRIME BE LIABLE FOR ANY
+% DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+% (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+% LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+% ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+% (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+% SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
