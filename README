@@ -1,0 +1,14 @@
+matlabfrag is a function which exports a Matlab figure to .eps and .tex files for use in LaTeX/pdfLaTeX/LyX. It is inspired by LaPrint, but is intended to be more WYSIWYG, by respecting figure handles better.
+
+Some of the advantages of matlabfrag compared to LaPrint are: 
+- Much more emphasis on WYSIWYG. 
+- Handles figures that need the OpenGL or Z-Buffer renderers. 
+- Text objects are sized correctly (such as with a legend). 
+- Tick labels are handled better. 
+- Reduced number of options (which could also be viewed as a disadvantage). 
+
+To include the figures in LaTeX, pdfLaTeX and LyX I recommend the pstool package. More information can be found in the User Guide.
+
+Copyright (c) 2008--2010, Zebb Prime
+
+Code covered by the BSD License.
