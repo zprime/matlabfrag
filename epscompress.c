@@ -37,6 +37,8 @@
 #define FIRSTFREE 258
 // Maximum string storage space
 #define MAXSTR 1024
+// Maximum output width.
+#define OUTPUTWIDTH 75
 
 /*
  *  Uncomment one of the following to determine the output format.
@@ -45,82 +47,97 @@
  */
 //#define RAWOUTPUT
 #define ASCIIOUTPUT
+  
+typedef struct{
+  // Index and dictionary tables
+  unsigned int Index[ TABLEDEPTH ][ TABLESIZE ];
+  unsigned char Dictionary[ TABLESIZE ];
+  // Current character being processed.
+  unsigned char CurrentChar;
+  // Current index (equivalent to the prefix).
+  unsigned int CurrentIndex;
+  // Next free index.
+  unsigned int NextIndex;
+  // Variable to store the maximum index for the current bitsize
+  unsigned int MaxIndex;
+  // Current output bitsize.
+  unsigned int BitSize;  
+} LZW_State;
 
-// File pointers
-FILE *fin = NULL;
-FILE *fout = NULL;
+typedef struct{
+  // File pointers
+  FILE *fin;
+  FILE *fout;
+  unsigned int Storage;
+  unsigned int ColumnWidth;
+  int StorageIndex;
+} IO_State;
 
-// Index and dictionary tables
-unsigned int Index[ TABLEDEPTH ][ TABLESIZE ];
-unsigned char Dictionary[ TABLESIZE ];
-// Current character being processed.
-unsigned char CurChar;
-// Current index (equivalent to the prefix).
-unsigned int CurInd;
-// Next free index.
-unsigned int NextInd;
-// Variable to store the maximum index for the current bitsize
-unsigned int MaxInd;
-// Current output bitsize.
-unsigned int BitSize;
+/**
+ *  Initialise LZW_State data structure.
+ */
+void LZW_State_Init( LZW_State x )
+{
+  memset( x.Index, 0, sizeof( x.Index ) );
+  memset( x.Dictionary, 0, sizeof( x.Dictionary ) );
+  x.CurrentChar = 0;
+  x.CurrentIndex = 0;
+  x.NextIndex = FIRSTFREE;
+  x.MaxIndex = (1<<BITMIN);
+  x.BitSize = BITMIN;
+}
 
-int Streamout_Ind = 0;
-
-#ifdef RAWOUTPUT
-#undef ASCIIOUTPUT
-
-unsigned int Streamout_Storage = 0;
+/**
+ *  Initialise IO_State data structure.
+ */
+void IO_State_Init( IO_State x )
+{
+  x.Storage = 0;
+  x.ColumnWidth = 0;
+  x.StorageIndex = 0;
+}
 
 /**
  *  Write out a variable bit-length raw bitstream.
  *  Hopefully endian-independent.
  */
-void streamout( unsigned int x )
+void rawstreamout( unsigned int x, IO_State y, LZW_State z )
 { 
   // Add the bits to the storage variable
-  Streamout_Storage |= x<<(32-BitSize-Streamout_Ind);
-  Streamout_Ind += BitSize;
+  y.Storage |= x<<(32-z.BitSize-y.StorageIndex);
+  y.StorageIndex += z.BitSize;
   
   // Output all complete characters.
-  while( Streamout_Ind >= 8 )
+  while( y.StorageIndex >= 8 )
   {
-    fputc( (char)(Streamout_Storage>>24), fout );
-    Streamout_Ind -= 8;
-    Streamout_Storage <<= 8;
+    fputc( (char)(y.Storage>>24), y.fout );
+    y.StorageIndex -= 8;
+    y.Storage <<= 8;
   }
 }
 
 /**
  *  Cleanup streamout.  Outputs whatever incomplete characters are present.
  */
-void streamout_cleanup( void )
+void rawstreamout_cleanup( IO_State y )
 {
-  if( Streamout_Storage ) fputc( (char)(Streamout_Storage>>24), fout );
-  Streamout_Ind = 0;
-  Streamout_Storage = 0;
+  if( y.Storage ) fputc( (char)(y.Storage>>24), y.fout );
+  y.StorageIndex = 0;
+  y.Storage = 0;
 }
-#endif /* ifdef RAWOUTPUT */
-
-
-#ifdef ASCIIOUTPUT
-
-unsigned int Streamout_Storage = 0;
-// Maximum output width.
-#define OUTPUTWIDTH 75
-unsigned int Streamout_Width = 0;
 
 /**
  *  Private function to format the output into at max character widths.
  */
-void prv_put( char x )
+void asciiprv_put( char x, IO_State y )
 {
-  fputc( x, fout );
-  Streamout_Width++;
+  fputc( x, y.fout );
+  y.ColumnWidth++;
   // If output is full, print a newline
-  if( Streamout_Width == OUTPUTWIDTH )
+  if( y.ColumnWidth == OUTPUTWIDTH )
   {
-    fputc( 10, fout );
-    Streamout_Width = 0;
+    fputc( 10, y.fout );
+    y.ColumnWidth = 0;
   }
 }
 
@@ -128,34 +145,34 @@ void prv_put( char x )
  *  Takes a variable bit-length raw input stream, and formats it into
  *  ASCII85 format.
  */
-void streamout( unsigned int x )
+void asciistreamout( unsigned int x, IO_State y, LZW_State z )
 {
   int shift;
   // Shift the new data in.
-  shift = (32-BitSize-Streamout_Ind);
-  if( shift >= 0 ) Streamout_Storage |= (x<<shift);
-  else Streamout_Storage |= (x>>-shift);
+  shift = (32-z.BitSize-y.StorageIndex);
+  if( shift >= 0 ) y.Storage |= (x<<shift);
+  else y.Storage |= (x>>-shift);
   
-  Streamout_Ind += BitSize;
+  y.StorageIndex += z.BitSize;
   
   // If the buffer is full (i.e. 32-bits) output the 5 characters.
-  if( Streamout_Ind >= 32 )
+  if( y.StorageIndex >= 32 )
   {
     // Special case, 0 gets written out as z
-    if( Streamout_Storage == 0 ) prv_put( 'z' );
+    if( y.Storage == 0 ) asciiprv_put( 'z', y );
     else
     {
       // Otherwise, output the 5 characters.
-      prv_put( (char)((Streamout_Storage/85/85/85/85)%85+33) );
-      prv_put( (char)((Streamout_Storage/85/85/85)%85+33) );
-      prv_put( (char)((Streamout_Storage/85/85)%85+33) );
-      prv_put( (char)((Streamout_Storage/85)%85+33) );
-      prv_put( (char)((Streamout_Storage)%85+33) );
+      asciiprv_put( (char)((y.Storage/85/85/85/85)%85+33), y );
+      asciiprv_put( (char)((y.Storage/85/85/85)%85+33), y );
+      asciiprv_put( (char)((y.Storage/85/85)%85+33), y );
+      asciiprv_put( (char)((y.Storage/85)%85+33), y );
+      asciiprv_put( (char)((y.Storage)%85+33), y );
     }
-    Streamout_Ind -= 32;
+    y.StorageIndex -= 32;
     // Add any left-over bits to the storage.
-    if( Streamout_Ind == 0 ) Streamout_Storage = 0;
-    else Streamout_Storage = (x<<(32-Streamout_Ind));
+    if( y.StorageIndex == 0 ) y.Storage = 0;
+    else y.Storage = (x<<(32-y.StorageIndex));
   }
 }
 
@@ -163,68 +180,53 @@ void streamout( unsigned int x )
  *  Cleanup the output stream. Outputs whatever partially completed bits
  *  are present.
  */
-void streamout_cleanup( void )
+void asciistreamout_cleanup( IO_State y )
 {
   // Special case, 0 gets written as z
-  if( Streamout_Storage == 0 ) prv_put( 'z' );
+  if( y.Storage == 0 ) asciiprv_put( 'z', y );
   else
   {
     // Otherwise, output the 5 characters.
-    prv_put( (char)((Streamout_Storage/85/85/85/85)%85+33) );
-    prv_put( (char)((Streamout_Storage/85/85/85)%85+33) );
-    prv_put( (char)((Streamout_Storage/85/85)%85+33) );
-    prv_put( (char)((Streamout_Storage/85)%85+33) );
-    prv_put( (char)((Streamout_Storage)%85+33) );
+    asciiprv_put( (char)((y.Storage/85/85/85/85)%85+33), y );
+    asciiprv_put( (char)((y.Storage/85/85/85)%85+33), y );
+    asciiprv_put( (char)((y.Storage/85/85)%85+33), y );
+    asciiprv_put( (char)((y.Storage/85)%85+33), y );
+    asciiprv_put( (char)((y.Storage)%85+33), y );
   }
   // Cleanup variables, output the 'end of data' string.
-  Streamout_Ind = 0;
-  Streamout_Storage = 0;
-  Streamout_Width = 0;
-  fprintf(fout,"~>");
-}
-#endif /* ifdef ASCIIOUTPUT */
-
-/**
- *  Initialise the Index and Dictionary, and output the special
- *  ClearTable character.
- */
-void tableInit( void )
-{
-  unsigned int temp1,temp2;
-  
-  streamout( CLEARTABLE );
-  
-  memset( Dictionary, 0, sizeof( Dictionary ) );
-  memset( Index, 0, sizeof( Index ) );
-  
-  BitSize = BITMIN;
-  MaxInd = (1<<BitSize);
-  NextInd = FIRSTFREE;
+  y.StorageIndex = 0;
+  y.Storage = 0;
+  y.ColumnWidth = 0;
+  fprintf(y.fout,"~>");
 }
 
 /**
  *  Update the Dictionary with new values, and outputs the current prefix.
  */
-void NotInDictionary( unsigned int fromNode, unsigned int from )
+void NotInDictionary( unsigned int fromNode, unsigned int from, IO_State y, LZW_State z )
 {
   // Update the tables
-  Index[ fromNode ][ from ] = NextInd;
-  Dictionary[ NextInd ] = CurChar;
-  NextInd++;
+  z.Index[ fromNode ][ from ] = z.NextIndex;
+  z.Dictionary[ z.NextIndex ] = z.CurrentChar;
+  z.NextIndex++;
 
   // Output the current index (prefix)
-  streamout( CurInd );
+  asciistreamout( z.CurrentIndex, y, z );
   // Update to the new index (prefix)
-  CurInd = CurChar;
+  z.CurrentIndex = z.CurrentChar;
   
   // Check to see if bitsize has been exceeded.
-  if( NextInd == MaxInd )
+  if( z.NextIndex == z.MaxIndex )
   {
-    if( BitSize == BITMAX ) tableInit();
+    if( z.BitSize == BITMAX )
+    {
+      asciistreamout( CLEARTABLE, y, z );
+      LZW_State_Init( z );
+    }
     else
     {
-      BitSize++;
-      MaxInd = (1<<BitSize);
+      z.BitSize++;
+      z.MaxIndex = (1<<z.BitSize);
     }
   }
 }
@@ -237,9 +239,11 @@ void mexFunction(int nlhs,mxArray *plhs[],int nrhs,const mxArray *prhs[])
   unsigned int X;
   char str[ MAXSTR ];
   
-  Streamout_Ind = 0;
-  Streamout_Storage = 0;
-  BitSize = BITMIN;
+  IO_State y;
+  LZW_State z;
+  
+  IO_State_Init( y );
+  LZW_State_Init( z );
   
   // Sanity check the inputs
   if( nrhs != 2 ) mexErrMsgTxt("Two input arguments required.\n");
@@ -249,59 +253,52 @@ void mexFunction(int nlhs,mxArray *plhs[],int nrhs,const mxArray *prhs[])
   if ( !( mxIsChar(prhs[0]) && mxIsChar(prhs[1]) ) )
       mexErrMsgTxt("Inputs (filenames) must both be of type string.\n.");
   
-  fin = fopen( mxArrayToString( prhs[0] ), "r" );
-  if( fin == NULL )
+  y.fin = fopen( mxArrayToString( prhs[0] ), "r" );
+  if( y.fin == NULL )
       mexErrMsgTxt("Cannot open the input file for reading.\n");
   
-  fout = fopen( mxArrayToString( prhs[1] ), "w" );
-  if( fout == NULL )
+  y.fout = fopen( mxArrayToString( prhs[1] ), "w" );
+  if( y.fout == NULL )
       mexErrMsgTxt("Cannot open the output file for writing.\n");
   
-  if( feof( fin ) )
-  {
-    fclose(fin);
-    fclose(fout);
-    mexErrMsgTxt("Input file is empty.\n");
-  }
-  
   // Scan input file until the end of the header is found.
-  while( !feof( fin ) )
+  while( !feof( y.fin ) )
   {
-    fgets( str, MAXSTR, fin );
-    fputs( str, fout );
+    fgets( str, MAXSTR, y.fin );
+    fputs( str, y.fout );
     if( !strncmp(str,"%%EndComments",10) )
     {
       break;
     }
   }
-  if( feof( fin ) )
+  if( feof( y.fin ) )
   {
-    fclose(fin);
-    fclose(fout);
+    fclose(y.fin);
+    fclose(y.fout);
     mexErrMsgTxt("Unexpected end of file.\n");
   }
   
 #ifdef RAWOUTPUT
-  fprintf(fout,"\ncurrentfile/LZWDecode filter cvx exec\n");
+  fprintf(y.fout,"\ncurrentfile/LZWDecode filter cvx exec\n");
 #endif
 #ifdef ASCIIOUTPUT
-  fprintf(fout,"\ncurrentfile/ASCII85Decode filter/LZWDecode filter cvx exec\n");
+  fprintf(y.fout,"\ncurrentfile/ASCII85Decode filter/LZWDecode filter cvx exec\n");
 #endif
   
-  CurInd = fgetc( fin );
+  z.CurrentIndex = fgetc( y.fin );
   
-  tableInit();
+  asciistreamout( CLEARTABLE, y, z );
   
   // Loop through all of the input data.
-  while( !feof( fin ) )
+  while( !feof( y.fin ) )
   {
-    CurChar = fgetc( fin );
+    z.CurrentChar = fgetc( y.fin );
     
     // Test to see if prefix exists as a child.
-    X = Index[ CHILD ][ CurInd ];
+    X = z.Index[ CHILD ][ z.CurrentIndex ];
     if( X==0 )
     {
-      NotInDictionary( CHILD, CurInd );
+      NotInDictionary( CHILD, z.CurrentIndex, y, z );
       continue;
     }
     
@@ -309,39 +306,39 @@ void mexFunction(int nlhs,mxArray *plhs[],int nrhs,const mxArray *prhs[])
     while( 1 )
     {
       // If we find a value in the dictionary
-      if( CurChar == Dictionary[ X ] )
+      if( z.CurrentChar == z.Dictionary[ X ] )
       {
-        CurInd = X;
+        z.CurrentIndex = X;
         break;
       }
       // Otherwise, search through the tree
-      if( CurChar > Dictionary[ X ] )
+      if( z.CurrentChar > z.Dictionary[ X ] )
       {
-        if( Index[ RIGHT ][ X ] == 0 )
+        if( z.Index[ RIGHT ][ X ] == 0 )
         {
-          NotInDictionary( RIGHT, X );
+          NotInDictionary( RIGHT, X, y, z );
           break;
         }
-        else X = Index[ RIGHT ][ X ];
+        else X = z.Index[ RIGHT ][ X ];
       }
       else
       {
-        if( Index[ LEFT ][ X ] == 0 )
+        if( z.Index[ LEFT ][ X ] == 0 )
         {
-          NotInDictionary( LEFT, X );
+          NotInDictionary( LEFT, X, y, z );
           break;
         }
-        else X = Index[ LEFT ][ X ];
+        else X = z.Index[ LEFT ][ X ];
       }
     }
   }
   
   // Clean up the output.
-  streamout( ENDOFDATA );
-  streamout_cleanup();
+  asciistreamout( ENDOFDATA, y, z );
+  asciistreamout_cleanup( y );
   
-  fclose(fout);
-  fclose(fin);
+  fclose(y.fout);
+  fclose(y.fin);
 }
 
 // Copyright (c) 2010, Zebb Prime
