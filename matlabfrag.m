@@ -38,13 +38,19 @@
 % ylabel('random','fontsize',14);
 % matlabfrag('RandPlot','epspad',[5,0,0,0],'compress',0);
 %
-% v0.7.0dev 29-Aug-2010
+% v0.7.0dev 09-Sep-2010
 %
-% Please report bugs to <a href="mailto:zebb.prime+matlabfrag@gmail.com">zebb.prime+matlabfrag@gmail.com</a>
+% Please report bugs as issues on <a href="matlab:web('http://github.com/zprime/matlabfrag','-browser')">github</a>.
 %
-% Available on the <a href="matlab:web('http://www.mathworks.com/matlabcentral/fileexchange/21286','-browser')">Matlab File Exchange</a>
+% Released on the <a href="matlab:web('http://www.mathworks.com/matlabcentral/fileexchange/21286','-browser')">Matlab File Exchange</a>
 
 function matlabfrag(FileName,varargin)
+
+% Nice output if the user calls matlabfrag without any parameters.
+if nargin == 0
+  help matlabfrag
+  return;
+end
 
 % Matlab version check
 v = version;
@@ -160,7 +166,7 @@ end
 % Test to see if the directory (if specified) exists
 [pathstr,namestr] = fileparts(FileName);
 if ~isempty(pathstr)
-  if ~exist(['./',pathstr],'dir')
+  if ~exist(pathstr,'dir')
     mkdir(pathstr);
   end
   % Tidy up the FileName
@@ -249,10 +255,13 @@ if p.Results.compress
   if exist('epscompress','file') ~= 3
     warning('matlabfrag:epscompress:NotFound',...
       ['Cannot find a compiled version of epscompress, thus the eps\n',...
-      'file will not be compressed. To compile epscompress, navigate\n',...
-      'to the matlabfrag folder and run:\n',...
+      'file will not be compressed. To compile epscompress, in Matlab\n',...
+      'navigate to the matlabfrag folder and run:\n',...
       '  >> mex -setup %% If mex hasn''t been setup before\n',...
-      '  >> mex epscompress.c']);
+      '  >> mex epscompress.c\n\n',...
+      'Suppress this warning in the future by running:\n',...
+      '  >> warning off matlabfrag:epscompress:NotFound\n',...
+      'or turning the ''compress'' option off.']);
   else
     movefile([FileName,'.eps'],[FileName,'-uncompressed.eps']);
     epscompress([FileName,'-uncompressed.eps'],[FileName,'.eps']);
@@ -455,7 +464,8 @@ end
       % treats its strings in figures.
       assert( size(String,2) == 1 && iscellstr(String),...
         'matlabfrag:WeirdError',['Weird ''String'' formatting.\n',...
-        'Please email the author, as this error should not occur.']);
+        'Please raise an issue on github (see the help text for a link),\n',...
+        'as this error should not occur.']);
       % If the cell only has 1 element, then do nothing.
       if size(String,1)==1
         String = String{:};
@@ -530,9 +540,8 @@ end
       if ~isempty(regexpi(err.message,'''enabled'''))
         error('matlabfrag:legendlistener',...
           ['Oops, it looks like Matlab has changed the way it does legend\n',...
-          'callbacks. Please let me know if you see this via ',...
-          '<a href="mailto:zebb.prime+matlabfrag@gmail.com?subject=',...
-          'Matlabfrag:ScribeLegendListener_error">email</a>']);
+          'callbacks. Please let me know if you see by raising an issue\n',...
+          'on github (see the help text for a link).']);
       end
     end
     % Extract common options.
