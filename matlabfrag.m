@@ -170,6 +170,10 @@ if ~isempty(pathstr)
     mkdir(pathstr);
   end
   % Tidy up the FileName
+  currentdir = pwd;
+  cd(pathstr);
+  pathstr = pwd;
+  cd(currentdir);
   FileName = [pathstr,filesep,namestr];
 else
   FileName = namestr;
