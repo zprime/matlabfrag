@@ -166,12 +166,15 @@ end
 % Test to see if the directory (if specified) exists
 [pathstr,namestr] = fileparts(FileName);
 if ~isempty(pathstr)
-  if ~exist(pathstr,'dir')
-    mkdir(pathstr);
-  end
-  % Tidy up the FileName
   currentdir = pwd;
-  cd(pathstr);
+  try
+    cd(pathstr);
+  catch %#ok
+    % Create it if it doesn't exist
+    mkdir(pathstr);
+    cd(pathstr);
+  end
+  % Tidy up the string
   pathstr = pwd;
   cd(currentdir);
   FileName = [pathstr,filesep,namestr];

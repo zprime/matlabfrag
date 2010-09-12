@@ -14,12 +14,14 @@ else
   warning('run_all:noLaPrint','LaPrint not found. Skipping the comparisons');
 end
 %% Run the scripts
-numExamples = 17;
-for ii=1:numExamples
+ii=1;
+while exist( sprintf('ex%02i',ii), 'file' )
   run( sprintf('ex%02i',ii) );
+  ii = ii+1;
 end
 %% Run the extra testing scripts
-numTests=16;
-for ii=1:numTests
+ii=1;
+while exist( sprintf('test%02i',ii), 'file' )
   run( sprintf('test%02i',ii) );
+  ii = ii+1;
 end
