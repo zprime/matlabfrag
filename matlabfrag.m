@@ -425,8 +425,8 @@ end
     % Hide all of the hidden handles again
     set(0,'showhiddenhandles',hidden);
     
-    % Get the position of all the text objects
-    textpos = GetTextPos(texthandles);
+    % Add actions to reset text positions
+    GetTextPos(texthandles);
     
     % Freeze all axes, and process ticks.
     for jj=1:length(axeshandles)
@@ -435,7 +435,7 @@ end
     
     % Process all text.
     for jj=1:length(texthandles)
-      ProcessText(texthandles(jj),textpos{jj});
+      ProcessText(texthandles(jj));
     end
   end
 
@@ -450,7 +450,7 @@ end
 
 % Process a text handle, extracting the appropriate data
 %  and creating 'action' functions
-  function ProcessText(handle,Pos)
+  function ProcessText(handle)
     % Get some of the text properties.
     String = get(handle,'string');
     UserData = get(handle,'UserData');
@@ -509,8 +509,6 @@ end
     if ~strcmpi(get(handle,'interpreter'),'none')
       SetUnsetProperties('Text Interpreter to none',handle,'interpreter','none');
     end
-    % Make sure the final position is the same as the original one
-    AddAction('Reset text Pos', @() set(handle,'position',Pos) );
     
     % Get the text colour
     Colour = get(handle,'color');
