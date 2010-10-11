@@ -320,7 +320,7 @@ try
   fid = fopen([FileName,'.tex'],'w');
   fwrite(fid,TEXHDR);
   
-  writeOutNegXTick = @() fprintf(fid,'\n%%\n\\def\\%s{\\mathord{\\makebox[0pt][r]{$-$}}}',NEGXTICK_COMMAND);
+  writeOutNegXTick = @() fprintf(fid,'\n%%\n\\providecommand\\%s{\\makebox[0pt][r]{$-$}}',NEGXTICK_COMMAND);
   
   FontStylePrefix = 'matlabtext';
   FontStyleId = double('A')-1;
@@ -383,7 +383,7 @@ try
       if CurrentlyFixedWidth; Fixed = '\ttfamily';
       else Fixed = ''; end;
       fprintf(fid,['\n%%\n\\providecommand\\%s%s{\\color[rgb]{%.3f,%.3f,'...
-        '%.3f}\\fontsize{%d}{%d}%s%s%s\\selectfont\\strut}%%'],FontStylePrefix,...
+        '%.3f}\\fontsize{%.2f}{%.2f}%s%s%s\\selectfont\\strut}%%'],FontStylePrefix,...
         char(FontStyleId),CurrentColour(1),CurrentColour(2),...
         CurrentColour(3),CurrentFontSize,CurrentFontSize,Angle,Weight,Fixed);
       NewFontStyle = 0;
