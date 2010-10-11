@@ -38,7 +38,7 @@
 % ylabel('random','fontsize',14);
 % matlabfrag('RandPlot','epspad',[5,0,0,0],'compress',0);
 %
-% v0.7.0dev 09-Sep-2010
+% v0.7.0devb01 11-Oct-2010
 %
 % Please report bugs as issues on <a href="matlab:web('http://github.com/zprime/matlabfrag','-browser')">github</a>.
 %
@@ -425,8 +425,8 @@ end
     % Hide all of the hidden handles again
     set(0,'showhiddenhandles',hidden);
     
-    % Add actions to reset text positions
-    GetTextPos(texthandles);
+    % Get the position of all the text objects
+    textpos = GetTextPos(texthandles);
     
     % Freeze all axes, and process ticks.
     for jj=1:length(axeshandles)
@@ -435,7 +435,7 @@ end
     
     % Process all text.
     for jj=1:length(texthandles)
-      ProcessText(texthandles(jj));
+      ProcessText(texthandles(jj),textpos{jj});
     end
   end
 
@@ -450,7 +450,7 @@ end
 
 % Process a text handle, extracting the appropriate data
 %  and creating 'action' functions
-  function ProcessText(handle)
+  function ProcessText(handle,Pos)
     % Get some of the text properties.
     String = get(handle,'string');
     UserData = get(handle,'UserData');
@@ -509,6 +509,8 @@ end
     if ~strcmpi(get(handle,'interpreter'),'none')
       SetUnsetProperties('Text Interpreter to none',handle,'interpreter','none');
     end
+    % Make sure the final position is the same as the original one
+    AddAction('Set text pos to where it originally was', @() set(handle,'position',Pos) );
     
     % Get the text colour
     Colour = get(handle,'color');
