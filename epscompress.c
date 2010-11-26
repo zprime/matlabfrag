@@ -19,27 +19,27 @@
 #include <string.h>
 #include "mex.h"
 
-// Maximum table size, 2^MaxBits
+/* Maximum table size, 2^MaxBits */
 #define TABLESIZE 4096
-// Number of branches for each node
+/* Number of branches for each node */
 #define TABLEDEPTH 3
-// Locations of each tree branch
+/* Locations of each tree branch */
 #define CHILD 0
 #define LEFT 1
 #define RIGHT 2
-// Max/Min output bit sizes.
+/* Max/Min output bit sizes. */
 #define BITMAX 12
 #define BITMIN 9
-// Special input/output values.
+/* Special input/output values. */
 #define CLEARTABLE 256
 #define ENDOFDATA 257
-// First free location in the index.
+/* First free location in the index. */
 #define FIRSTFREE 258
-// Maximum string storage space
+/* Maximum string storage space */
 #define MAXSTR 1024
-// Maximum output width.
+/* Maximum output width. */
 #define OUTPUTWIDTH 75
-// Number of lines between DSC comments before compression starts
+/* Number of lines between DSC comments before compression starts */
 #define DSCGRACE 10
 
 /**
@@ -47,18 +47,18 @@
  *  compression state.
  */
 typedef struct{
-  // Index and dictionary tables
+  /* Index and dictionary tables */
   unsigned int Index[ TABLEDEPTH ][ TABLESIZE ];
   unsigned char Dictionary[ TABLESIZE ];
-  // Current character being processed.
+  /* Current character being processed. */
   unsigned char CurrentChar;
-  // Current index (equivalent to the prefix).
+  /* Current index (equivalent to the prefix). */
   int CurrentIndex;
-  // Next free index.
+  /* Next free index. */
   unsigned int NextIndex;
-  // Variable to store the maximum index for the current bitsize
+  /* Variable to store the maximum index for the current bitsize */
   unsigned int MaxIndex;
-  // Current output bitsize.
+  /* Current output bitsize. */
   unsigned int BitSize;  
 } LZW_State;
 
@@ -66,7 +66,7 @@ typedef struct{
  *  Structure containing information about the IO state.
  */
 typedef struct{
-  // File pointers
+  /* File pointers */
   FILE *fin;
   FILE *fout;
   unsigned int Storage;
@@ -106,7 +106,7 @@ void asciiprv_put( char x, IO_State *y )
 {
   fputc( x, y->fout );
   y->ColumnWidth++;
-  // If output is full, print a newline
+  /* If output is full, print a newline */
   if( y->ColumnWidth == OUTPUTWIDTH )
   {
     fputc( 10, y->fout );
@@ -123,28 +123,28 @@ void asciistreamout( unsigned int x, IO_State *y, LZW_State *z )
   int shift, ii;
   const int divisors[] = { 85*85*85*85, 85*85*85, 85*85, 85, 1 };
   
-  // Shift the new data in.
+  /* Shift the new data in. */
   shift = (32-z->BitSize-y->StorageIndex);
   if( shift >= 0 ) y->Storage |= (x<<shift);
   else y->Storage |= (x>>-shift);
   
   y->StorageIndex += z->BitSize;
   
-  // If the buffer is full (i.e. 32-bits) output the 5 characters.
+  /* If the buffer is full (i.e. 32-bits) output the 5 characters. */
   if( y->StorageIndex >= 32 )
   {
-    // Special case, 0 gets written out as z
+    /* Special case, 0 gets written out as z */
     if( y->Storage == 0 ) asciiprv_put( 'z', y );
     else
     {
-      // Otherwise, output the 5 characters.
+      /* Otherwise, output the 5 characters. */
       for( ii=0; ii<5; ii++ )
       {
         asciiprv_put( (char)( ( y->Storage/divisors[ii] )%85+33 ), y );
       }
     }
     y->StorageIndex -= 32;
-    // Add any left-over bits to the storage.
+    /* Add any left-over bits to the storage. */
     if( y->StorageIndex == 0 ) y->Storage = 0;
     else y->Storage = (x<<(32-y->StorageIndex));
   }
@@ -159,14 +159,14 @@ void asciistreamout_cleanup( IO_State *y )
   int ii,numBytes;
   const int divisors[] = { 85*85*85*85, 85*85*85, 85*85, 85, 1 };
 
-  // Only output as many bytes as required, as per Adobe ASCII85
+  /* Only output as many bytes as required, as per Adobe ASCII85 */
   numBytes = 5 - (32-y->StorageIndex)/8;
   for( ii=0; ii<numBytes; ii++ )
   {
     asciiprv_put( (char)( ( y->Storage/divisors[ii] )%85+33 ), y );
   }
     
-  // Cleanup variables, output the 'end of data' string.
+  /* Cleanup variables, output the 'end of data' string. */
   y->StorageIndex = 0;
   y->Storage = 0;
   y->ColumnWidth = 0;
@@ -180,17 +180,17 @@ void NotInDictionary( unsigned int fromNode, unsigned int from, IO_State *y, LZW
 {
   int temp;
   
-  // Update the tables
+  /* Update the tables */
   z->Index[ fromNode ][ from ] = z->NextIndex;
   z->Dictionary[ z->NextIndex ] = z->CurrentChar;
   z->NextIndex++;
 
-  // Output the current index (prefix)
+  /* Output the current index (prefix) */
   asciistreamout( z->CurrentIndex, y, z );
-  // Update to the new index (prefix)
+  /* Update to the new index (prefix) */
   z->CurrentIndex = z->CurrentChar;
   
-  // Check to see if bitsize has been exceeded.
+  /* Check to see if bitsize has been exceeded. */
   if( z->NextIndex == z->MaxIndex )
   {
     if( z->BitSize == BITMAX )
@@ -223,7 +223,7 @@ void LZW( char x, IO_State *y, LZW_State *z)
   
   z->CurrentChar = x;
     
-  // Test to see if prefix exists as a child.
+  /* Test to see if prefix exists as a child. */
   X = z->Index[ CHILD ][ z->CurrentIndex ];
   if( X==0 )
   {
@@ -231,16 +231,16 @@ void LZW( char x, IO_State *y, LZW_State *z)
     return;
   }
     
-  // Binary tree search for current string.
+  /* Binary tree search for current string. */
   while( 1 )
   {
-    // If we find a value in the dictionary
+    /* If we find a value in the dictionary */
     if( z->CurrentChar == z->Dictionary[ X ] )
     {
       z->CurrentIndex = X;
       break;
     }
-    // Otherwise, search through the tree
+    /* Otherwise, search through the tree */
     if( z->CurrentChar > z->Dictionary[ X ] )
     {
       if( z->Index[ RIGHT ][ X ] == 0 )
@@ -281,7 +281,7 @@ void mexFunction(int nlhs,mxArray *plhs[],int nrhs,const mxArray *prhs[])
   IO_State_Init( &y );
   LZW_State_Init( &z );
   
-  // Sanity check the inputs
+  /* Sanity check the inputs */
   if( nrhs != 2 ) mexErrMsgTxt("Two input arguments required.\n");
   
   if( nlhs != 0 )  mexErrMsgTxt("Too many output arguments.\n");
@@ -297,7 +297,7 @@ void mexFunction(int nlhs,mxArray *plhs[],int nrhs,const mxArray *prhs[])
   if( y.fout == NULL )
       mexErrMsgTxt("Cannot open the output file for writing.\n");
   
-  // Read the header
+  /* Read the header */
   fgets( &str[0][0], MAXSTR, y.fin );
   if( ( strncmp( &str[0][0], "%!PS-Adobe-", 11 ) && strncmp( &str[0][0], eps_magic, 4 ) ) )
   {
@@ -312,19 +312,19 @@ void mexFunction(int nlhs,mxArray *plhs[],int nrhs,const mxArray *prhs[])
   {
     str[0][0] = 0;
     fgets( &str[0][0], MAXSTR, y.fin );
-    // If compression is off
+    /* If compression is off */
     if( comp_state == 0 )
     {
-      // If the next line is a DSC comment, output and continue
+      /* If the next line is a DSC comment, output and continue */
       if( !strncmp( &str[0][0], "%%", 2 ) ) fputs( &str[0][0], y.fout );
       
-      // Otherwise, determine if we need to start compression by scanning
-      // ahead.
+      /* Otherwise, determine if we need to start compression by scanning
+         ahead. */
       else
       {
         for( ii=1; ii<DSCGRACE; ii++ )
         {
-          // If file ends while scanning-ahead, output what's left and finish
+          /* If file ends while scanning-ahead, output what's left and finish */
           if( feof( y.fin ) )
           {
             for( jj=0; jj<ii; jj++ ) fputs( &str[jj][0], y.fout );
@@ -334,7 +334,7 @@ void mexFunction(int nlhs,mxArray *plhs[],int nrhs,const mxArray *prhs[])
           }
           str[ii][0] = 0;
           fgets( &str[ii][0], MAXSTR, y.fin );
-          // If we find a comment, don't start compressing and exit.
+          /* If we find a comment, don't start compressing and exit. */
           if( !strncmp( &str[ii][0], "%%", 2 ) )
           {
             for( jj=0; jj<=ii; jj++ ) fputs( &str[jj][0], y.fout );
@@ -342,7 +342,7 @@ void mexFunction(int nlhs,mxArray *plhs[],int nrhs,const mxArray *prhs[])
             break;
           }
         }
-        // If the loop ended without finding a comment, start compression
+        /* If the loop ended without finding a comment, start compression */
         if( ii == DSCGRACE )
         {
           IO_State_Init( &y );
@@ -362,10 +362,10 @@ void mexFunction(int nlhs,mxArray *plhs[],int nrhs,const mxArray *prhs[])
         }
       }
     }
-    // Otherwise, if compression is on.
+    /* Otherwise, if compression is on. */
     else
     {
-      // If we find a DSC comment, turn compression off
+      /* If we find a DSC comment, turn compression off */
       if( !strncmp( &str[0][0], "%%", 2 ) )
       {
         NotInDictionary( 0, 0, &y, &z );
@@ -374,7 +374,7 @@ void mexFunction(int nlhs,mxArray *plhs[],int nrhs,const mxArray *prhs[])
         fprintf( y.fout, "\n%s", &str[0][0] );
         comp_state = 0;
       }
-      // Otherwise, keep compressing
+      /* Otherwise, keep compressing */
       else
       {
         ii=0;
@@ -387,7 +387,7 @@ void mexFunction(int nlhs,mxArray *plhs[],int nrhs,const mxArray *prhs[])
     }
   }
   
-  // If we ended the file while compressing.
+  /* If we ended the file while compressing. */
   if( comp_state == 1 )
   {
     NotInDictionary( 0, 0, &y, &z );
@@ -395,32 +395,34 @@ void mexFunction(int nlhs,mxArray *plhs[],int nrhs,const mxArray *prhs[])
     asciistreamout_cleanup( &y );
   }
   
-  // Close the files and exit.
+  /* Close the files and exit. */
   fclose(y.fout);
   fclose(y.fin);
 }
 
-// Copyright (c) 2010, Zebb Prime
-// All rights reserved.
-// 
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above copyright
-//       notice, this list of conditions and the following disclaimer in the
-//       documentation and/or other materials provided with the distribution.
-//     * Neither the name of the organisation nor the
-//       names of its contributors may be used to endorse or promote products
-//       derived from this software without specific prior written permission.
-// 
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-// DISCLAIMED. IN NO EVENT SHALL ZEBB PRIME BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+/* 
+ Copyright (c) 2010, Zebb Prime
+ All rights reserved.
+ 
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions are met:
+     * Redistributions of source code must retain the above copyright
+       notice, this list of conditions and the following disclaimer.
+     * Redistributions in binary form must reproduce the above copyright
+       notice, this list of conditions and the following disclaimer in the
+       documentation and/or other materials provided with the distribution.
+     * Neither the name of the organisation nor the
+       names of its contributors may be used to endorse or promote products
+       derived from this software without specific prior written permission.
+ 
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ DISCLAIMED. IN NO EVENT SHALL ZEBB PRIME BE LIABLE FOR ANY
+ DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
