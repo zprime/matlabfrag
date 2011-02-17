@@ -9,4 +9,4 @@ plot(rand(2));
 axis([1 2 0 1]);
 matlabfrag('graphics/ex01-1');
 matlabfrag('graphics/ex01-2','epspad',[10,10,10,10],...
-  'handle',hfig);
+  'handle',hfig,'compress',true);

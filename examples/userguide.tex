@@ -114,6 +114,8 @@ matlabfrag(FileName,OPTIONS)
           For the {\ttfamily painters} renderer this defaults to 3200, and when
           using the {\ttfamily opengl} or {\ttfamily zbuffer} renderers the default is 300.
           A discussion of renderers is given in \Secref{renderers}.
+        \item[{\'compress'}] New in v0.7.0 is the option to compress eps files using LZW compression which is part of the EPS standard.
+          Compression requires that the auxiliary file, {\ttfamily epscompress.c} be compiled within \matlab\ (if a binary version for your system has not been shipped with \matlabfrag), as described in \Secref{compile-epscompress}.
       \end{itemize}
       Some examples are given below.\nobreak
       \VerbatimInput[firstline=7,lastline=12]{ex01.m}
@@ -183,7 +185,7 @@ matlabfrag(FileName,OPTIONS)
 \end{document}
       \end{verbatim}
       The only difference being that \pstoolname\ runs some external processes to run the postscript commands,
-      and as such it needs the \verb|-shell-escape| command when being called:\par
+      and as such it needs the \verb|-shell-escape| (or possibly \verb|--shell-escape| depending upon your LaTeX distribution) command when being called:\par
 {\verb|pdflatex -shell-escape example.tex|}\par\noindent
       where {\ttfamily example.tex} is the code above.
       
@@ -196,7 +198,7 @@ matlabfrag(FileName,OPTIONS)
         \item Load \pstoolname\ in the document preamble by going to: {\ttfamily Document - Settings}, then
           choose {\ttfamily LaTeX Preamble} in the navigation panel in the left. Insert the line
           \verb|\usepackage{pstool}| and apply the settings.
-        \item Enable \verb|-shell-escape| in pdfLaTeX by going to: {\ttfamily Tools - Preferences}, then
+        \item Enable \verb|-shell-escape| (or possibly \verb|--shell-escape| as mentioned above)  in pdfLaTeX by going to: {\ttfamily Tools - Preferences}, then
           choose {\ttfamily Converters} in the navigation panel in the left. Under {\ttfamily Converter Definitions}
           find the {\ttfamily LaTeX (pdflatex) -> PDF (pdflatex)} entry. Below this change the line\par
           {\verb|pdflatex $$i|}\par\noindent
@@ -399,6 +401,18 @@ set(hleg,'interpreter','latex');
       You can read more about why this is necessary in \Secref{adv-axis}.
 	  
   \section{Frequently (occasionally) asked questions}%
+    \subsection{How do I compile \ttfamily{epscompress.c}}\seclabel{compile-epscompress}
+      The prerequisites for compiling are a C compiler.
+      \begin{itemize}
+        \item In Windows, \matlab\ ships with a compiler already.
+        \item In OSX, installing Xcode is sufficient.
+        \item In Linux, {\ttfamily gcc} should be easily installable (if not already installed).
+      \end{itemize}
+      If you have not already done so, within \matlab\ you need to configure {\ttfamily mex} compilation:\par
+      {\verb|mex -setup|}\par\noindent
+      Finally, compile {\ttfamily epscompress.c} by navigating to the folder where you extracted \matlabfrag, and running:\par
+      {\verb|mex epscompress.c|}
+      
     \subsection{Why does the output have three digit numbers all through it?}
 	
 	  Either you are looking at the \eps\ output and that is how it is supposed to look,
@@ -482,7 +496,7 @@ title('Force versus sin(a)','userdata',...
 	        driver (e.g. {\ttfamily pdftex}) specified.
 	      \item If using pdfLaTeX and \pstoolname, check:
 	      \begin{enumerate}
-	        \item \verb|-shell-escape| option is set when calling pdfLaTeX.
+	        \item \verb|-shell-escape| option (or possibly \verb|--shell-escape| depending upon your LaTeX distribution) is set when calling pdfLaTeX.
 	      \end{enumerate}
 	      \item If using LaTeX and \pstoolname, check:
 	      \begin{enumerate}
@@ -510,6 +524,7 @@ title('Force versus sin(a)','userdata',...
       \begin{enumerate}
         \item This most likely happens if you resize the image in LaTeX using a \verb|[width=x]| argument.
           It is usually better to size the image in \matlab\ in the first place, and do no further resizing.
+          If you are having problems with a small figure size in \matlab\ cutting off axes labels, try manually positioning the axes within the figure.
         \item If you have mathematical equations, use the {\ttfamily latex} interpreter. This will make the
           text object be roughly the right size, which will let \matlab\ place it properly. This is
           especially useful for legends, as shown in \Figref{comparison01-matlabfrag}.
