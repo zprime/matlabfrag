@@ -21,14 +21,16 @@
 %    'epspad'      | [Left,Bottom,Right,Top] - Pad the eps figure by
 %                  |  the number of points in the input vector. Default
 %                  |  is [0,0,0,0].
-%    'renderer'    | ['painters','opengl','zbuffer'] - The renderer used
+%    'renderer'    | ['painters'|'opengl'|'zbuffer'] - The renderer used
 %                  |  to generate the figure. The default is 'painters'.
 %                  |  If you have manually specified the renderer,
 %                  |  matlabfrag will use this value.
 %    'dpi'         | DPI to print the images at. Default is 300 for OpenGL
 %                  |  or Z-Buffer images, and 3200 for painters images.
-%    'compress'    | [0|1|true|false] - whether to compress the resulting eps or not.
-%                  |   Default is true (compression on).
+%    'compress'    | [0|1|true|false] - whether to compress the resulting
+%                  |   eps file or not. Default is true (compression on).
+%    'unaryminus'  | ['normal'|'short'] - whether to use a short or normal
+%                  |   unary minus sign on tick labels. Default is 'normal'.
 %
 % EXAMPLE
 % plot(1:10,rand(1,10));
@@ -38,7 +40,7 @@
 % ylabel('random','fontsize',14);
 % matlabfrag('RandPlot','epspad',[5,0,0,0],'compress',false);
 %
-% v0.7.0devb02 17-Feb-2011
+% v0.7.0devb03 03-May-2011
 %
 % Please report bugs as issues on <a href="matlab:web('http://github.com/zprime/matlabfrag','-browser')">github</a>.
 %
@@ -76,7 +78,9 @@ TEXHDR = sprintf('%% Generated using matlabfrag\n%% Version: %s\n%% Version Date
 % Global macros
 REPLACEMENT_FORMAT = '%03d';
 USERDATA_PREFIX = 'matlabfrag:';
-NEGXTICK_COMMAND = 'matlabfragNegXTick';
+NEGTICK_SHORT_COMMAND = 'matlabfragNegTickShort';
+NEGTICK_SHORT_SCRIPT_COMMAND = 'matlabfragNegTickShortScript';
+NEGTICK_NO_WIDTH_COMMAND = 'matlabfragNegTickNoWidth';
 ACTION_FUNC_NAME = @(x) sprintf('f%i',x);
 ACTION_DESC_NAME = @(x) sprintf('d%i',x);
 
@@ -98,6 +102,7 @@ p.addParamValue('renderer', 'painters', ...
 p.addParamValue('dpi', 300, @(x) isnumeric(x) );
 p.addParamValue('compress',1, @(x) (isnumeric(x) || islogical(x) ) );
 p.addParamValue('debuglvl',0, @(x) isnumeric(x) && x>=0);
+p.addParamValue('unaryminus','normal', @(x) any( strcmpi(x,{'short','normal'}) ) );
 p.parse(FileName,varargin{:});
 
 if p.Results.debuglvl >= SHOW_OPTIONS
@@ -108,6 +113,7 @@ if p.Results.debuglvl >= SHOW_OPTIONS
   fprintf(1,'OPTION: dpi = %i\n',p.Results.dpi);
   fprintf(1,'OPTION: debuglvl = %i\n',p.Results.debuglvl);
   fprintf(1,'OPTION: compress = %i\n',p.Results.compress);
+  fprintf(1,'OPTION: unaryminus = %s\n',p.Results.unaryminus);
   fprintf(1,'OPTION: Parameters using their defaults:');
   fprintf(1,' %s',p.UsingDefaults{:});
   fprintf(1,'\n');
@@ -115,6 +121,16 @@ end
 
 if FigureHasNoText(p)
   return;
+end
+
+% Tick unary minus commands. Used to have a zero width X minus (for nice
+% alignment), and shorter minus signs if requested.
+if strcmpi(p.Results.unaryminus,'short')
+  writeOutNegTickNoWidth = @(fid) fprintf(fid,'\n\\providecommand\\%s{\\scalebox{0.6}[1]{\\makebox[0pt][r]{\\ensuremath{-}}}}%%',NEGTICK_NO_WIDTH_COMMAND);
+  writeOutNegTickShort = @(fid) fprintf(fid,'\n\\providecommand\\%s{\\scalebox{0.6}[1]{\\ensuremath{-}}}%%',NEGTICK_SHORT_COMMAND);
+  writeOutNegTickShortScript = @(fid) fprintf(fid,'\n\\providecommand\\%s{\\scalebox{0.6}[1]{\\ensuremath{\\scriptstyle -}}}%%',NEGTICK_SHORT_SCRIPT_COMMAND);
+else
+  writeOutNegTickNoWidth = @(fid) fprintf(fid,'\n\\providecommand\\%s{\\makebox[0pt][r]{\\ensuremath{-}}}%%',NEGTICK_NO_WIDTH_COMMAND);
 end
 
 % Create Action and UndoAction structures, and initialise the length field
@@ -322,8 +338,6 @@ try
   fid = fopen([FileName,'.tex'],'w');
   fwrite(fid,TEXHDR);
   
-  writeOutNegXTick = @() fprintf(fid,'\n%%\n\\providecommand\\%s{\\makebox[0pt][r]{$-$}}',NEGXTICK_COMMAND);
-  
   FontStylePrefix = 'matlabtext';
   FontStyleId = double('A')-1;
   NewFontStyle = 1;
@@ -334,10 +348,14 @@ try
   CurrentlyFixedWidth = 0;
   CurrentType = PsfragCmds{1,9};
   
-  fprintf(fid,'\n%%\n%%%% <%s>',CurrentType);
-  if strcmpi(CurrentType,'xtick')
-    writeOutNegXTick();
+  fprintf(fid,'\n%%');
+  if strcmpi( p.Results.unaryminus, 'short' )
+    writeOutNegTickShort(fid);
+    writeOutNegTickShortScript(fid);
   end
+  writeOutNegTickNoWidth(fid);
+  
+  fprintf(fid,'\n%%\n%%%% <%s>',CurrentType);
   for ii=1:size(PsfragCmds,1)
     % Test to see if the font size has changed
     if ~(CurrentFontSize == PsfragCmds{ii,4})
@@ -349,7 +367,7 @@ try
       CurrentColour = PsfragCmds{ii,5};
       NewFontStyle = 1;
     end
-    % Test to see fi the font angle has changed
+    % Test to see if the font angle has changed
     if ~(CurrentAngle == PsfragCmds{ii,6})
       CurrentAngle = PsfragCmds{ii,6};
       NewFontStyle = 1;
@@ -369,9 +387,6 @@ try
       fprintf(fid,'\n%%\n%%%% </%s>',CurrentType);
       CurrentType = PsfragCmds{ii,9};
       fprintf(fid,'\n%%\n%%%% <%s>',CurrentType);
-      if strcmpi(CurrentType,'xtick')
-        writeOutNegXTick();
-      end
       if ~NewFontStyle
         fprintf(fid,'\n%%');
       end
@@ -421,14 +436,21 @@ end
     set(0,'showhiddenhandles','on');
     
     % Get all text and axes handles
-    axeshandles = findobj(parent,'Type','axes');
-    texthandles = findobj(parent,'Type','text');
+    axeshandles = findobj(parent,'Type','axes','visible','on');
+    legendhandles = findobj(parent,'Type','axes','Tag','legend','visible','on');
+    axeshandles = setdiff(axeshandles,legendhandles);
+    texthandles = findobj(parent,'Type','text','visible','on');
     
     % Hide all of the hidden handles again
     set(0,'showhiddenhandles',hidden);
     
     % Get the position of all the text objects
     textpos = GetTextPos(texthandles);
+    
+    % Freeze all legends (after axes and legend listeners have been disables)
+    for jj=1:length(legendhandles)
+      ProcessLegends(legendhandles(jj));
+    end
     
     % Freeze all axes, and process ticks.
     for jj=1:length(axeshandles)
@@ -457,8 +479,7 @@ end
     String = get(handle,'string');
     UserData = get(handle,'UserData');
     UserString = {};
-    % Test to see if the text is visible. If not, return.
-    if strcmpi(get(handle,'visible'),'off'); return; end;
+
     % Process the strings alignment options
     [halign,valign] = GetAlignment(handle);
     % Test to see if UserData is valid.
@@ -521,17 +542,18 @@ end
       FontSize,Colour,FontAngle,FontWeight,FixedWidth,'text');
   end
 
+% Process the legends. This should be done after the axes have been processed
+%  and the legend listeners have been disabled.
+  function ProcessLegends(handle)
+    % Make sure legend ends up where it started from
+    lpos = get(handle,'position');
+    SetUnsetProperties('Legend Pos to current Pos',handle,'Position', lpos );
+  end
+
 % Processes the position, position mode and 'ticks' of an axis, then returns.
 %  Don't do anything if it is a legend
   function ProcessTicks(handle)
-    % Return if nothing to do.
-    if strcmpi(get(handle,'visible'),'off'); return; end;
-    % If legend, freeze the axes and return.
-    if strcmpi(get(handle,'tag'),'legend');
-      SetUnsetProperties('Legend Pos to current Pos',...
-        handle,'Position', get(handle,'Position') );
-      return;
-    end;
+    
     % Make sure figure doesn't resize itself while we are messing with it.
     for jj=['x' 'y' 'z']
       AutoTickLabel.(jj) = strcmpi(get(handle,[jj,'ticklabelmode']),'auto');
@@ -540,7 +562,12 @@ end
       'xlimmode','manual','ylimmode','manual','zlimmode','manual',...
       'xtickmode','manual','ytickmode','manual','ztickmode','manual',...
       'xticklabelmode','manual','yticklabelmode','manual','zticklabelmode','manual');
-    SetUnsetProperties('Fix Axes Pos',handle,'position', get(handle,'position') );
+    apos = get(handle,'position');
+    SetUnsetProperties('Fix Axes Pos',handle,'position', apos );
+    tickpropcell = {'xtick','ytick','ztick','xticklabel','yticklabel','zticklabel','xlim','ylim','zlim'};
+    tickprops = get(handle,tickpropcell);
+    varg = reshape( [ tickpropcell; tickprops ], 1, 2*length(tickprops) );
+    SetUnsetProperties('Fix ticks',handle, varg{:} );
     try
       hlist = get(handle,'ScribeLegendListeners');
       SetUnsetProperties('Disable legend fontname listener',hlist.fontname,'enabled','off');
@@ -557,6 +584,8 @@ end
     [FontSize,FontAngle,FontWeight,FixedWidth] = CommonOptions(handle);
     SetUnsetProperties('Axes font to fixed-width',handle,'FontName','fixedwidth');
     FontName = 'fixedwidth';
+    % Test to see if the plot is 2D or 3D.
+    Plot2D = isempty(get(handle,'zticklabel')) && all( get(handle,'view') == [0 90] );
     % Loop through all axes
     for jj = ['x' 'y' 'z']
       ticklabels = get(handle,[jj,'ticklabel']);
@@ -582,8 +611,14 @@ end
           ticklabelcell = mat2cell(ticklabels,ones(1,size(ticklabels,1)),size(ticklabels,2));
           if all(~isnan(str2double(ticklabelcell)))
             % If so, make the labels read 10^<TickLabel>
-            ticklabels = cellfun(@(x) ['$10^{',RemoveSpaces(x),'}$'],...
-              ticklabelcell,'uniformoutput',0);
+            if strcmpi( p.Results.unaryminus, 'short' )
+              ticklabels = cellfun(@(x) ['$10^{',...
+                regexprep( RemoveSpaces(x), '-', ['\\',NEGTICK_SHORT_SCRIPT_COMMAND,' '] ),...
+                '}$'],ticklabelcell,'uniformoutput',0);
+            else
+              ticklabels = cellfun(@(x) ['$10^{',RemoveSpaces(x),...
+                '}$'],ticklabelcell,'uniformoutput',0);
+            end
           end
           
           % Test to see if there is a common factor
@@ -603,11 +638,13 @@ end
             assert( abs(scale-round(scale))<1e-2, 'matlabfrag:AxesScaling:NonInteger',...
               ['Non integer axes scaling.  This is most likely a bug in matlabfrag.\n',...
               'Please let me know the ytick and yticklabel values for this plot.']);
-            LatexScale = ['$\times10^{',num2str(round(scale)),'}$'];
-            % Test to see if this is a 3D or 2D plot
-            if isempty(get(handle,'zticklabel')) &&...
-                all( get(handle,'view') == [0 90] )
-              
+            if strcmpi( p.Results.unaryminus, 'short' )
+              LatexScale = ['$\times10^{', regexprep( num2str(round(scale)), '-', ['\\',NEGTICK_SHORT_SCRIPT_COMMAND,' '] ), '}$'];
+            else
+              LatexScale = ['$\times10^{',num2str(round(scale)),'}$'];
+            end
+            % Different action depending if the plot is 2D or 3D
+            if Plot2D
               %2D Plot... fairly easy.
               % Common required data...
               Xlims = get(handle,'xlim');
@@ -730,7 +767,8 @@ end
           end
         end
         
-        % Test whether all of the ticks are numbers, if so wrap them in $
+        % Test whether all of the ticks are numbers, if so, substitute in
+        % proper minus signs.
         if ~iscell(ticklabels)
           ticklabels = mat2cell(ticklabels,ones(1,size(ticklabels,1)),size(ticklabels,2));
         end
@@ -745,13 +783,13 @@ end
           end
         end
         if TicksAreNumbers
-          if strcmpi(jj,'x')
+          if (Plot2D && strcmpi(jj,'x')) || (~Plot2D && any(strcmpi(jj,{'x','y'})) )
             for kk=1:size(ticklabels)
               if isempty(ticklabels{kk,:})
                 continue;
               end
               ticklabels{kk,:} = ['$',...
-              RemoveSpaces( regexprep(ticklabels{kk,:},'-',['\\',NEGXTICK_COMMAND,' ']) ),...
+              RemoveSpaces( regexprep(ticklabels{kk,:},'-',['\\',NEGTICK_NO_WIDTH_COMMAND,' ']) ),...
               '$'];
             end
           else
@@ -759,7 +797,13 @@ end
               if isempty(ticklabels{kk,:})
                 continue;
               end
-              ticklabels{kk,:} = ['$',RemoveSpaces(ticklabels{kk,:}),'$'];
+              if strcmpi( p.Results.unaryminus, 'short' )
+                ticklabels{kk,:} = ['$',...
+                  RemoveSpaces( regexprep(ticklabels{kk,:},'-',['\\',NEGTICK_SHORT_COMMAND,' ']) ),...
+                  '$'];
+              else
+                ticklabels{kk,:} = ['$', RemoveSpaces( ticklabels{kk,:} ),'$'];
+              end
             end
           end
         end
@@ -1143,7 +1187,7 @@ end
 
 end % of matlabfrag(FileName,p.Results.handle)
 
-% Copyright (c) 2008--2010, Zebb Prime
+% Copyright (c) 2008--2011, Zebb Prime
 % All rights reserved.
 % 
 % Redistribution and use in source and binary forms, with or without

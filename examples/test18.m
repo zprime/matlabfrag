@@ -1,0 +1,10 @@
+hfig = figure;
+set(hfig,'NumberTitle','off','Name','test18','units','centimeters');
+hpos = get(hfig,'position');
+set(hfig,'position',[hpos(1:2),6,5]);
+plot([1e-5 1],-1e-3*rand(2,6));
+set(gca,'xtick',[1e-5 1e-4 1e-3 1e-2 1e-1 1],'xscale','log');
+xlabel('X label');
+legend('Legend');
+matlabfrag('graphics/test18-fig1','unaryminus','normal');
+matlabfrag('graphics/test18-fig2','unaryminus','short');

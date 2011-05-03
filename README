@@ -9,6 +9,6 @@ Some of the advantages of matlabfrag compared to LaPrint are:
 
 To include the figures in LaTeX, pdfLaTeX and LyX I recommend the pstool package. More information can be found in the User Guide.
 
-Copyright (c) 2008--2010, Zebb Prime
+Copyright (c) 2008--2011, Zebb Prime
 
 Code covered by the BSD License.
