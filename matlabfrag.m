@@ -40,7 +40,7 @@
 % ylabel('random','fontsize',14);
 % matlabfrag('RandPlot','epspad',[5,0,0,0],'compress',false);
 %
-% v0.7.0devb03 03-May-2011
+% v0.7.0devb04 30-May-2013
 %
 % Please report bugs as issues on <a href="matlab:web('http://github.com/zprime/matlabfrag','-browser')">github</a>.
 %
@@ -649,11 +649,21 @@ end
               % Common required data...
               Xlims = get(handle,'xlim');
               Ylims = get(handle,'ylim');
+              Xdir = get(handle,'xdir');
+              Ydir = get(handle,'ydir');
               XAlignment = get(handle,'XAxisLocation');
               YAlignment = get(handle,'YAxisLocation');
               % 2D plot, so only x and y...
               CurrentReplacement = ReplacementString();
               
+              % If the axes are reversed, reverse the lims
+              if strcmpi(Xdir,'reverse')
+                Xlims = Xlims(end:-1:1);
+              end
+              if strcmpi(Ydir,'reverse')
+                Ylims = Ylims(end:-1:1);
+              end
+                          
               % X axis scale
               if strcmpi(jj,'x')
                 if strcmpi(XAlignment,'bottom');
@@ -985,7 +995,9 @@ end
     end
     VAlign = get(handle,'VerticalAlignment');
     switch VAlign
-      case {'baseline','bottom','base'}
+      case {'baseline'}
+        valign = 'B';
+      case {'bottom','base'}
         valign = 'b';
       case {'top','cap'}
         valign = 't';
@@ -1030,6 +1042,11 @@ end
     
     ht = findobj(handle,'type','text');
     ht = findobj(ht,'visible','on');
+    
+    % Handles of objects marked with matlabfrag:painters
+    hv = findobj(handle,'userdata','matlabfrag:painters');
+    ht = union( ht, hv );
+    
     ha = findobj(handle,'type','axes');
     
     % Hide all of the text handles again
@@ -1187,7 +1204,7 @@ end
 
 end % of matlabfrag(FileName,p.Results.handle)
 
-% Copyright (c) 2008--2011, Zebb Prime
+% Copyright (c) 2008--2013, Zebb Prime
 % All rights reserved.
 % 
 % Redistribution and use in source and binary forms, with or without
