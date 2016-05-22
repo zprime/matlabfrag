@@ -607,19 +607,15 @@ end
         
         % Test to see if it is on a logarithmic scale
         if strcmpi(get(handle,[jj,'scale']),'log') && AutoTickLabel.(jj)
-          % And all of the values are integers
           ticklabelcell = mat2cell(ticklabels,ones(1,size(ticklabels,1)),size(ticklabels,2));
-          if all(~isnan(str2double(ticklabelcell)))
-            % If so, make the labels read 10^<TickLabel>
             if strcmpi( p.Results.unaryminus, 'short' )
-              ticklabels = cellfun(@(x) ['$10^{',...
+              ticklabels = cellfun(@(x) ['$',...
                 regexprep( RemoveSpaces(x), '-', ['\\',NEGTICK_SHORT_SCRIPT_COMMAND,' '] ),...
-                '}$'],ticklabelcell,'uniformoutput',0);
+                '$'],ticklabelcell,'uniformoutput',0);
             else
-              ticklabels = cellfun(@(x) ['$10^{',RemoveSpaces(x),...
-                '}$'],ticklabelcell,'uniformoutput',0);
+              ticklabels = cellfun(@(x) ['$',RemoveSpaces(x),...
+                '$'],ticklabelcell,'uniformoutput',0);
             end
-          end
           
           % Test to see if there is a common factor
         elseif strcmpi(get(handle,[jj,'scale']),'linear') && AutoTickLabel.(jj)
