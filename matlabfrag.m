@@ -95,14 +95,14 @@ p = inputParser;
 p.FunctionName = 'matlabfrag';
 
 p.addRequired('FileName', @(x) ischar(x) );
-p.addParamValue('handle', gcf, @(x) ishandle(x) && strcmpi(get(x,'Type'),'figure') );
-p.addParamValue('epspad', [0,0,0,0], @(x) isnumeric(x) && (all(size(x) == [1 4])) );
-p.addParamValue('renderer', 'painters', ...
+p.addParameter('handle', gcf, @(x) ishandle(x) && strcmpi(get(x,'Type'),'figure') );
+p.addParameter('epspad', [0,0,0,0], @(x) isnumeric(x) && (all(size(x) == [1 4])) );
+p.addParameter('renderer', 'painters', ...
   @(x) any( strcmpi(x,{'painters','opengl','zbuffer'}) ) );
-p.addParamValue('dpi', 300, @(x) isnumeric(x) );
-p.addParamValue('compress',1, @(x) (isnumeric(x) || islogical(x) ) );
-p.addParamValue('debuglvl',0, @(x) isnumeric(x) && x>=0);
-p.addParamValue('unaryminus','normal', @(x) any( strcmpi(x,{'short','normal'}) ) );
+p.addParameter('dpi', 300, @(x) isnumeric(x) );
+p.addParameter('compress',1, @(x) (isnumeric(x) || islogical(x) ) );
+p.addParameter('debuglvl',0, @(x) isnumeric(x) && x>=0);
+p.addParameter('unaryminus','normal', @(x) any( strcmpi(x,{'short','normal'}) ) );
 p.parse(FileName,varargin{:});
 
 if p.Results.debuglvl >= SHOW_OPTIONS
@@ -185,7 +185,7 @@ if ~isempty(pathstr)
   currentdir = pwd;
   try
     cd(pathstr);
-  catch %#ok
+  catch 
     % Create it if it doesn't exist
     mkdir(pathstr);
     cd(pathstr);
@@ -417,7 +417,7 @@ try
   
   fclose(fid);
   
-catch                %#ok -- needed for r2007a support
+catch                % -- needed for r2007a support
   err = lasterror;   %#ok
   if fid > 0
     fclose(fid);
@@ -571,7 +571,7 @@ end
     try
       hlist = get(handle,'ScribeLegendListeners');
       SetUnsetProperties('Disable legend fontname listener',hlist.fontname,'enabled','off');
-    catch                 %#ok -- required for r2007a support
+    catch                 % -- required for r2007a support
       err = lasterror;    %#ok
       if ~isempty(regexpi(err.message,'''enabled'''))
         error('matlabfrag:legendlistener',...
@@ -1079,7 +1079,7 @@ end
       fh = fopen([tmp_file,'.eps'],'r');
       paintersfile = fread(fh,inf,'uint8=>char').';
       fh = fclose(fh);
-    catch                  %#ok -- required for r2007a support
+    catch                  % -- required for r2007a support
       err = lasterror;     %#ok
       if fh > 0
         fh = close(fh);
@@ -1104,7 +1104,7 @@ end
       fh = fopen([filename,'.eps'],'r');
       epsfile = fread(fh,inf,'uint8=>char').';
       fh = fclose(fh);
-    catch                  %#ok -- this is required for r2007a support
+    catch                  % -- this is required for r2007a support
       err = lasterror;     %#ok
       if fh > 0
         fh = close(fh);
@@ -1121,7 +1121,7 @@ end
       fh = fopen([filename,'.eps'],'w');
       fwrite(fh,epsfile);
       fh = fclose(fh);
-    catch                %#ok -- this is required for r2007a support
+    catch                % -- this is required for r2007a support
       err = lasterror;   %#ok
       if fh > 0
         fh = fclose(fh);
