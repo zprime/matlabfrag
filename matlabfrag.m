@@ -608,14 +608,14 @@ end
         % Test to see if it is on a logarithmic scale
         if strcmpi(get(handle,[jj,'scale']),'log') && AutoTickLabel.(jj)
           ticklabelcell = mat2cell(ticklabels,ones(1,size(ticklabels,1)),size(ticklabels,2));
-            if strcmpi( p.Results.unaryminus, 'short' )
-              ticklabels = cellfun(@(x) ['$',...
-                regexprep( RemoveSpaces(x), '-', ['\\',NEGTICK_SHORT_SCRIPT_COMMAND,' '] ),...
-                '$'],ticklabelcell,'uniformoutput',0);
-            else
-              ticklabels = cellfun(@(x) ['$',RemoveSpaces(x),...
-                '$'],ticklabelcell,'uniformoutput',0);
-            end
+          if strcmpi( p.Results.unaryminus, 'short' )
+            ticklabels = cellfun(@(x) ['$',...
+              regexprep( RemoveSpaces(x), '-', ['\\',NEGTICK_SHORT_SCRIPT_COMMAND,' '] ),...
+              '$'],ticklabelcell,'uniformoutput',0);
+          else
+            ticklabels = cellfun(@(x) ['$',RemoveSpaces(x),...
+              '$'],ticklabelcell,'uniformoutput',0);
+          end
           
           % Test to see if there is a common factor
         elseif strcmpi(get(handle,[jj,'scale']),'linear') && AutoTickLabel.(jj)
