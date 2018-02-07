@@ -405,11 +405,29 @@ try
         CurrentColour(3),CurrentFontSize,CurrentFontSize,Angle,Weight,Fixed);
       NewFontStyle = 0;
     end
-    fprintf(fid,'\n\\psfrag{%s}',PsfragCmds{ii,2});
-    % Only put in positioning information if it is not [bl] aligned
-    if ~strcmp(PsfragCmds{ii,3},'bl') || ~strcmp(PsfragCmds{ii,3},'lb')
-      fprintf(fid,'[%s][%s]',PsfragCmds{ii,3},PsfragCmds{ii,3});
+
+    if(iscell(PsfragCmds{ii,2})) % Legend has a seperate text cell for each entry
+        for ci=1:length(PsfragCmds{ii,2})
+          fprintf(fid,'\n\\psfrag{%s}',PsfragCmds{ii,2}{ci}); 
+          
+            % Only put in positioning information if it is not [bl] aligned
+            if ~strcmp(PsfragCmds{ii,3},'bl') || ~strcmp(PsfragCmds{ii,3},'lb')
+              fprintf(fid,'[%s][%s]',PsfragCmds{ii,3},PsfragCmds{ii,3});
+            end
+            fprintf(fid,'{\\%s%s %s}%%',FontStylePrefix,...
+              char(FontStyleId),RemoveSpaces(PsfragCmds{ii,1}{ci}));
+        end
+    else % All other text
+        fprintf(fid,'\n\\psfrag{%s}',PsfragCmds{ii,2});
+        
+        % Only put in positioning information if it is not [bl] aligned
+        if ~strcmp(PsfragCmds{ii,3},'bl') || ~strcmp(PsfragCmds{ii,3},'lb')
+          fprintf(fid,'[%s][%s]',PsfragCmds{ii,3},PsfragCmds{ii,3});
+        end
+        fprintf(fid,'{\\%s%s %s}%%',FontStylePrefix,...
+          char(FontStyleId),RemoveSpaces(PsfragCmds{ii,1}));
     end
+    
     fprintf(fid,'{\\%s%s %s}%%',FontStylePrefix,...
       char(FontStyleId),RemoveSpaces(PsfragCmds{ii,1}));
   end
@@ -548,6 +566,29 @@ end
     % Make sure legend ends up where it started from
     lpos = get(handle,'position');
     SetUnsetProperties('Legend Pos to current Pos',handle,'Position', lpos );
+    
+    String = handle.String;
+
+    % Retrieve the common options
+    [FontSize,FontAngle,FontWeight,FixedWidth] = CommonOptions(handle);
+    
+    % Assign a replacement action for the legend strings
+    CurrentReplacement={};
+    for jj=1:length(handle.String)
+        CurrentReplacement{jj} = ['00000' ReplacementString()]; % Legend box needs extra padding
+    end
+    SetUnsetProperties('Replacing text string',handle,'String',CurrentReplacement);
+
+    % Replacement action for the interpreter
+    if ~strcmpi(get(handle,'interpreter'),'none')
+      SetUnsetProperties('Text Interpreter to none',handle,'interpreter','none');
+    end
+
+    % Legend object does not store text colors properly
+    Colour = [0 0 0];
+    % Finally create the replacement command
+    AddPsfragCommand(String,CurrentReplacement,'cl',...
+      FontSize,Colour,FontAngle,FontWeight,FixedWidth,'text');
   end
 
 % Processes the position, position mode and 'ticks' of an axis, then returns.
