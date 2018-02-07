@@ -437,7 +437,7 @@ end
     
     % Get all text and axes handles
     axeshandles = findobj(parent,'Type','axes','visible','on');
-    legendhandles = findobj(parent,'Type','axes','Tag','legend','visible','on');
+    legendhandles = findobj(parent, 'Type', 'Legend');
     axeshandles = setdiff(axeshandles,legendhandles);
     texthandles = findobj(parent,'Type','text','visible','on');
     
