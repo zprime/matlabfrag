@@ -415,7 +415,7 @@ try
               fprintf(fid,'[%s][%s]',PsfragCmds{ii,3},PsfragCmds{ii,3});
             end
             fprintf(fid,'{\\%s%s %s}%%',FontStylePrefix,...
-              char(FontStyleId),RemoveSpaces(PsfragCmds{ii,1}{ci}));
+              char(FontStyleId),EscapeSpecial(RemoveSpaces(PsfragCmds{ii,1}{ci})));
         end
     else % All other text
         fprintf(fid,'\n\\psfrag{%s}',PsfragCmds{ii,2});
@@ -425,7 +425,7 @@ try
           fprintf(fid,'[%s][%s]',PsfragCmds{ii,3},PsfragCmds{ii,3});
         end
         fprintf(fid,'{\\%s%s %s}%%',FontStylePrefix,...
-          char(FontStyleId),RemoveSpaces(PsfragCmds{ii,1}));
+          char(FontStyleId),EscapeSpecial(RemoveSpaces(PsfragCmds{ii,1})));
     end
 
   end
@@ -993,6 +993,30 @@ end
     UndoActions.( ACTION_DESC_NAME( UndoActions.length ) ) = description;
   end
 
+% Surrounds the Matlab supported Tex characters in math mode
+  function str = EscapeSpecial(str)
+    specialcharacterlist={'\alpha', '\upsilon', '\sim', '\angle',
+    '\phi', '\leq', '\ast', '\chi', '\infty', '\beta', '\psi',
+    '\clubsuit', '\gamma', '\omega', '\diamondsuit', '\delta',
+    '\Gamma', '\heartsuit', '\epsilon', '\Delta', '\spadesuit',
+    '\zeta', '\Theta', '\leftrightarrow', '\eta', '\Lambda',
+    '\leftarrow', '\theta', '\Xi', '\Leftarrow', '\vartheta',
+    '\Pi', '\uparrow', '\iota', '\Sigma', '\rightarrow',
+    '\kappa', '\Upsilon', '\Rightarrow', '\lambda', '\Phi',
+    '\downarrow', '\mu', '\Psi', '\circ', '\nu', '\Omega',
+    '\pm', '\xi', '\forall', '\geq', '\pi', '\exists', '\propto',
+    '\rho', '\ni', '\partial', '\sigma', '\cong', '\bullet', '\varsigma',
+    '\approx', '\div', '\tau', '\Re', '\neq', '\equiv', '\oplus',
+    '\aleph', '\Im', '\cup', '\wp', '\otimes', '\subseteq', '\oslash',
+    '\cap', '\in', '\supseteq', '\supset', '\lceil', '\subset', '\int',
+    '\cdot', '\o', '\rfloor', '\neg', '\nabla', '\lfloor', '\times', '\ldots',
+    '\perp', '\surd', '\prime', '\wedge', '\varpi', '\0', '\rceil', '\rangle',
+    '\mid', '\vee', '\langle', '\copyright'};
+    for i = 1:length(specialcharacterlist)
+        str = regexprep(str,['\', specialcharacterlist{i}],'\$$1\$');
+    end
+  end
+  
 % Remove leading and trailing edge white spaces
 % from any string.
   function cropped_string = RemoveSpaces(string)
