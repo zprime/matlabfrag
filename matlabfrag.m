@@ -95,14 +95,14 @@ p = inputParser;
 p.FunctionName = 'matlabfrag';
 
 p.addRequired('FileName', @(x) ischar(x) );
-p.addParamValue('handle', gcf, @(x) ishandle(x) && strcmpi(get(x,'Type'),'figure') );
-p.addParamValue('epspad', [0,0,0,0], @(x) isnumeric(x) && (all(size(x) == [1 4])) );
-p.addParamValue('renderer', 'painters', ...
+p.addParameter('handle', gcf, @(x) ishandle(x) && strcmpi(get(x,'Type'),'figure') );
+p.addParameter('epspad', [0,0,0,0], @(x) isnumeric(x) && (all(size(x) == [1 4])) );
+p.addParameter('renderer', 'painters', ...
   @(x) any( strcmpi(x,{'painters','opengl','zbuffer'}) ) );
-p.addParamValue('dpi', 300, @(x) isnumeric(x) );
-p.addParamValue('compress',1, @(x) (isnumeric(x) || islogical(x) ) );
-p.addParamValue('debuglvl',0, @(x) isnumeric(x) && x>=0);
-p.addParamValue('unaryminus','normal', @(x) any( strcmpi(x,{'short','normal'}) ) );
+p.addParameter('dpi', 300, @(x) isnumeric(x) );
+p.addParameter('compress',1, @(x) (isnumeric(x) || islogical(x) ) );
+p.addParameter('debuglvl',0, @(x) isnumeric(x) && x>=0);
+p.addParameter('unaryminus','normal', @(x) any( strcmpi(x,{'short','normal'}) ) );
 p.parse(FileName,varargin{:});
 
 if p.Results.debuglvl >= SHOW_OPTIONS
@@ -185,7 +185,7 @@ if ~isempty(pathstr)
   currentdir = pwd;
   try
     cd(pathstr);
-  catch %#ok
+  catch 
     % Create it if it doesn't exist
     mkdir(pathstr);
     cd(pathstr);
@@ -405,19 +405,35 @@ try
         CurrentColour(3),CurrentFontSize,CurrentFontSize,Angle,Weight,Fixed);
       NewFontStyle = 0;
     end
-    fprintf(fid,'\n\\psfrag{%s}',PsfragCmds{ii,2});
-    % Only put in positioning information if it is not [bl] aligned
-    if ~strcmp(PsfragCmds{ii,3},'bl') || ~strcmp(PsfragCmds{ii,3},'lb')
-      fprintf(fid,'[%s][%s]',PsfragCmds{ii,3},PsfragCmds{ii,3});
+
+    if(iscell(PsfragCmds{ii,2})) % Legend has a seperate text cell for each entry
+        for ci=1:length(PsfragCmds{ii,2})
+          fprintf(fid,'\n\\psfrag{%s}',PsfragCmds{ii,2}{ci}); 
+          
+            % Only put in positioning information if it is not [bl] aligned
+            if ~strcmp(PsfragCmds{ii,3},'bl') || ~strcmp(PsfragCmds{ii,3},'lb')
+              fprintf(fid,'[%s][%s]',PsfragCmds{ii,3},PsfragCmds{ii,3});
+            end
+            fprintf(fid,'{\\%s%s %s}%%',FontStylePrefix,...
+              char(FontStyleId),EscapeSpecial(RemoveSpaces(PsfragCmds{ii,1}{ci})));
+        end
+    else % All other text
+        fprintf(fid,'\n\\psfrag{%s}',PsfragCmds{ii,2});
+        
+        % Only put in positioning information if it is not [bl] aligned
+        if ~strcmp(PsfragCmds{ii,3},'bl') || ~strcmp(PsfragCmds{ii,3},'lb')
+          fprintf(fid,'[%s][%s]',PsfragCmds{ii,3},PsfragCmds{ii,3});
+        end
+        fprintf(fid,'{\\%s%s %s}%%',FontStylePrefix,...
+          char(FontStyleId),EscapeSpecial(RemoveSpaces(PsfragCmds{ii,1})));
     end
-    fprintf(fid,'{\\%s%s %s}%%',FontStylePrefix,...
-      char(FontStyleId),RemoveSpaces(PsfragCmds{ii,1}));
+
   end
   fprintf(fid,'\n%%\n%%%% </%s>',CurrentType);
   
   fclose(fid);
   
-catch                %#ok -- needed for r2007a support
+catch                % -- needed for r2007a support
   err = lasterror;   %#ok
   if fid > 0
     fclose(fid);
@@ -437,7 +453,7 @@ end
     
     % Get all text and axes handles
     axeshandles = findobj(parent,'Type','axes','visible','on');
-    legendhandles = findobj(parent,'Type','axes','Tag','legend','visible','on');
+    legendhandles = findobj(parent, 'Type', 'Legend');
     axeshandles = setdiff(axeshandles,legendhandles);
     texthandles = findobj(parent,'Type','text','visible','on');
     
@@ -548,6 +564,29 @@ end
     % Make sure legend ends up where it started from
     lpos = get(handle,'position');
     SetUnsetProperties('Legend Pos to current Pos',handle,'Position', lpos );
+    
+    String = handle.String;
+
+    % Retrieve the common options
+    [FontSize,FontAngle,FontWeight,FixedWidth] = CommonOptions(handle);
+    
+    % Assign a replacement action for the legend strings
+    CurrentReplacement={};
+    for jj=1:length(handle.String)
+        CurrentReplacement{jj} = ['00000' ReplacementString()]; % Legend box needs extra padding
+    end
+    SetUnsetProperties('Replacing text string',handle,'String',CurrentReplacement);
+
+    % Replacement action for the interpreter
+    if ~strcmpi(get(handle,'interpreter'),'none')
+      SetUnsetProperties('Text Interpreter to none',handle,'interpreter','none');
+    end
+
+    % Legend object does not store text colors properly
+    Colour = [0 0 0];
+    % Finally create the replacement command
+    AddPsfragCommand(String,CurrentReplacement,'cl',...
+      FontSize,Colour,FontAngle,FontWeight,FixedWidth,'text');
   end
 
 % Processes the position, position mode and 'ticks' of an axis, then returns.
@@ -571,7 +610,7 @@ end
     try
       hlist = get(handle,'ScribeLegendListeners');
       SetUnsetProperties('Disable legend fontname listener',hlist.fontname,'enabled','off');
-    catch                 %#ok -- required for r2007a support
+    catch                 % -- required for r2007a support
       err = lasterror;    %#ok
       if ~isempty(regexpi(err.message,'''enabled'''))
         error('matlabfrag:legendlistener',...
@@ -607,18 +646,14 @@ end
         
         % Test to see if it is on a logarithmic scale
         if strcmpi(get(handle,[jj,'scale']),'log') && AutoTickLabel.(jj)
-          % And all of the values are integers
           ticklabelcell = mat2cell(ticklabels,ones(1,size(ticklabels,1)),size(ticklabels,2));
-          if all(~isnan(str2double(ticklabelcell)))
-            % If so, make the labels read 10^<TickLabel>
-            if strcmpi( p.Results.unaryminus, 'short' )
-              ticklabels = cellfun(@(x) ['$10^{',...
-                regexprep( RemoveSpaces(x), '-', ['\\',NEGTICK_SHORT_SCRIPT_COMMAND,' '] ),...
-                '}$'],ticklabelcell,'uniformoutput',0);
-            else
-              ticklabels = cellfun(@(x) ['$10^{',RemoveSpaces(x),...
-                '}$'],ticklabelcell,'uniformoutput',0);
-            end
+          if strcmpi( p.Results.unaryminus, 'short' )
+            ticklabels = cellfun(@(x) ['$',...
+              regexprep( RemoveSpaces(x), '-', ['\\',NEGTICK_SHORT_SCRIPT_COMMAND,' '] ),...
+              '$'],ticklabelcell,'uniformoutput',0);
+          else
+            ticklabels = cellfun(@(x) ['$',RemoveSpaces(x),...
+              '$'],ticklabelcell,'uniformoutput',0);
           end
           
           % Test to see if there is a common factor
@@ -958,6 +993,30 @@ end
     UndoActions.( ACTION_DESC_NAME( UndoActions.length ) ) = description;
   end
 
+% Surrounds the Matlab supported Tex characters in math mode
+  function str = EscapeSpecial(str)
+    specialcharacterlist={'\alpha', '\upsilon', '\sim', '\angle',...
+    '\phi', '\leq', '\ast', '\chi', '\infty', '\beta', '\psi',...
+    '\clubsuit', '\gamma', '\omega', '\diamondsuit', '\delta',...
+    '\Gamma', '\heartsuit', '\epsilon', '\Delta', '\spadesuit',...
+    '\zeta', '\Theta', '\leftrightarrow', '\eta', '\Lambda',...
+    '\leftarrow', '\theta', '\Xi', '\Leftarrow', '\vartheta',...
+    '\Pi', '\uparrow', '\iota', '\Sigma', '\rightarrow',...
+    '\kappa', '\Upsilon', '\Rightarrow', '\lambda', '\Phi',...
+    '\downarrow', '\mu', '\Psi', '\circ', '\nu', '\Omega',...
+    '\pm', '\xi', '\forall', '\geq', '\pi', '\exists', '\propto',...
+    '\rho', '\ni', '\partial', '\sigma', '\cong', '\bullet', '\varsigma',...
+    '\approx', '\div', '\tau', '\Re', '\neq', '\equiv', '\oplus',...
+    '\aleph', '\Im', '\cup', '\wp', '\otimes', '\subseteq', '\oslash',...
+    '\cap', '\in', '\supseteq', '\supset', '\lceil', '\subset', '\int',...
+    '\cdot', '\o', '\rfloor', '\neg', '\nabla', '\lfloor', '\times', ...
+    '\ldots','\perp', '\surd', '\prime', '\wedge', '\varpi', '\0',...
+    '\rceil', '\rangle', '\mid', '\vee', '\langle', '\copyright'};
+    for i = 1:length(specialcharacterlist)
+        str = regexprep(str,['(\', specialcharacterlist{i},')'],'\$$1\$');
+    end
+  end
+  
 % Remove leading and trailing edge white spaces
 % from any string.
   function cropped_string = RemoveSpaces(string)
@@ -1083,7 +1142,7 @@ end
       fh = fopen([tmp_file,'.eps'],'r');
       paintersfile = fread(fh,inf,'uint8=>char').';
       fh = fclose(fh);
-    catch                  %#ok -- required for r2007a support
+    catch                  % -- required for r2007a support
       err = lasterror;     %#ok
       if fh > 0
         fh = close(fh);
@@ -1108,7 +1167,7 @@ end
       fh = fopen([filename,'.eps'],'r');
       epsfile = fread(fh,inf,'uint8=>char').';
       fh = fclose(fh);
-    catch                  %#ok -- this is required for r2007a support
+    catch                  % -- this is required for r2007a support
       err = lasterror;     %#ok
       if fh > 0
         fh = close(fh);
@@ -1125,7 +1184,7 @@ end
       fh = fopen([filename,'.eps'],'w');
       fwrite(fh,epsfile);
       fh = fclose(fh);
-    catch                %#ok -- this is required for r2007a support
+    catch                % -- this is required for r2007a support
       err = lasterror;   %#ok
       if fh > 0
         fh = fclose(fh);
