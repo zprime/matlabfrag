@@ -427,9 +427,7 @@ try
         fprintf(fid,'{\\%s%s %s}%%',FontStylePrefix,...
           char(FontStyleId),RemoveSpaces(PsfragCmds{ii,1}));
     end
-    
-    fprintf(fid,'{\\%s%s %s}%%',FontStylePrefix,...
-      char(FontStyleId),RemoveSpaces(PsfragCmds{ii,1}));
+
   end
   fprintf(fid,'\n%%\n%%%% </%s>',CurrentType);
   
