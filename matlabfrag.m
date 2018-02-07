@@ -652,12 +652,12 @@ end
         if strcmpi(get(handle,[jj,'scale']),'log') && AutoTickLabel.(jj)
           ticklabelcell = mat2cell(ticklabels,ones(1,size(ticklabels,1)),size(ticklabels,2));
           if strcmpi( p.Results.unaryminus, 'short' )
-            ticklabels = cellfun(@(x) ['$',...
+            ticklabels = cellfun(@(x) ['\mathmodel',...
               regexprep( RemoveSpaces(x), '-', ['\\',NEGTICK_SHORT_SCRIPT_COMMAND,' '] ),...
-              '$'],ticklabelcell,'uniformoutput',0);
+              '\mathmoder'],ticklabelcell,'uniformoutput',0);
           else
-            ticklabels = cellfun(@(x) ['$',RemoveSpaces(x),...
-              '$'],ticklabelcell,'uniformoutput',0);
+            ticklabels = cellfun(@(x) ['\mathmodel',RemoveSpaces(x),...
+              '\mathmoder'],ticklabelcell,'uniformoutput',0);
           end
           
           % Test to see if there is a common factor
@@ -678,9 +678,9 @@ end
               ['Non integer axes scaling.  This is most likely a bug in matlabfrag.\n',...
               'Please let me know the ytick and yticklabel values for this plot.']);
             if strcmpi( p.Results.unaryminus, 'short' )
-              LatexScale = ['$\times10^{', regexprep( num2str(round(scale)), '-', ['\\',NEGTICK_SHORT_SCRIPT_COMMAND,' '] ), '}$'];
+              LatexScale = ['\mathmodel\times10^{', regexprep( num2str(round(scale)), '-', ['\\',NEGTICK_SHORT_SCRIPT_COMMAND,' '] ), '}\mathmoder'];
             else
-              LatexScale = ['$\times10^{',num2str(round(scale)),'}$'];
+              LatexScale = ['\mathmodel\times10^{',num2str(round(scale)),'}\mathmoder'];
             end
             % Different action depending if the plot is 2D or 3D
             if Plot2D
@@ -837,9 +837,9 @@ end
               if isempty(ticklabels{kk,:})
                 continue;
               end
-              ticklabels{kk,:} = ['$',...
+              ticklabels{kk,:} = ['\mathmodel',...
               RemoveSpaces( regexprep(ticklabels{kk,:},'-',['\\',NEGTICK_NO_WIDTH_COMMAND,' ']) ),...
-              '$'];
+              '\mathmoder'];
             end
           else
             for kk=1:size(ticklabels)
@@ -847,11 +847,11 @@ end
                 continue;
               end
               if strcmpi( p.Results.unaryminus, 'short' )
-                ticklabels{kk,:} = ['$',...
+                ticklabels{kk,:} = ['\mathmodel',...
                   RemoveSpaces( regexprep(ticklabels{kk,:},'-',['\\',NEGTICK_SHORT_COMMAND,' ']) ),...
-                  '$'];
+                  '\mathmoder'];
               else
-                ticklabels{kk,:} = ['$', RemoveSpaces( ticklabels{kk,:} ),'$'];
+                ticklabels{kk,:} = ['\mathmodel', RemoveSpaces( ticklabels{kk,:} ),'\mathmoder'];
               end
             end
           end
@@ -1016,9 +1016,36 @@ end
     '\cdot', '\o', '\rfloor', '\neg', '\nabla', '\lfloor', '\times', ...
     '\ldots','\perp', '\surd', '\prime', '\wedge', '\varpi', '\0',...
     '\rceil', '\rangle', '\mid', '\vee', '\langle', '\copyright'};
-    for i = 1:length(specialcharacterlist)
-        str = regexprep(str,['(\', specialcharacterlist{i},')'],'\$$1\$');
+
+    % First escape any $ and % text characters
+    str = strrep(str,'$','\$');
+    str = strrep(str,'%','\%');
+    
+    % Handle superscript and subscript modifiers if the string is not
+    % already in math mode
+    if ~(startsWith(str,'\mathmodel') && endsWith(str,'\mathmoder'))
+        % Replace ^{stuff} with $^{\textnormal{stuff}}$
+        str = regexprep(str,'\^\{(.*?)\}','\\mathmodel\^\{\\textnormal\{$1\}\}\\mathmoder'); 
+        % Replace ^c with $^{\textnormal{c}}$
+        str = regexprep(str,'\^([^{])','\\mathmodel\^\{\\textnormal\{$1\}\}\\mathmoder'); 
+        % Replace _{stuff} with $^{\textnormal{stuff}}$
+        str = regexprep(str,'_\{(.*?)\}','\\mathmodel_\{\\textnormal\{$1\}\}\\mathmoder'); 
+        % Replace _c with $^{\textnormal{c}}$
+        str = regexprep(str,'_([^{])','\\mathmodel_\{\\textnormal\{$1\}\}\\mathmoder'); 
     end
+    
+    % Escape any single special characters
+    for i = 1:length(specialcharacterlist)
+        str = regexprep(str,['(\', specialcharacterlist{i},')'],'\\mathmodel$1\\mathmoder');
+    end
+    
+    % Finally replace matlabfrag placeholder commands with the LaTeX equivalent
+    
+    % LaTeX mathmode commands. Note that in LaTeX 3, 
+    % \(... and \) will likely become the preferred syntax instead of $...$
+    str = strrep(str,'\mathmoder\mathmodel',''); % Merge to handle characters with both a super and subscript
+    str = strrep(str,'\mathmodel','$');
+    str = strrep(str,'\mathmoder','$');
   end
   
 % Remove leading and trailing edge white spaces
