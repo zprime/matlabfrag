@@ -453,7 +453,11 @@ end
     
     % Get all text and axes handles
     axeshandles = findobj(parent,'Type','axes','visible','on');
-    legendhandles = findobj(parent, 'Type', 'Legend');
+    if v(1) < 8 || (v(1) == 8 && v(2) < 4) % Prior to MATLAB R2014b, legends and colorbars were axes objects
+        legendhandles = findobj(parent,'Type','axes','Tag','legend','visible','on');
+    else
+        legendhandles = findobj(parent,'Type','Legend','visible','on');
+    end
     axeshandles = setdiff(axeshandles,legendhandles);
     texthandles = findobj(parent,'Type','text','visible','on');
     
