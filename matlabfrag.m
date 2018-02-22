@@ -288,9 +288,13 @@ if p.Results.compress
         'or turning the ''compress'' option off.']);
     end
   else
-    movefile([FileName,'.eps'],[FileName,'-uncompressed.eps']);
-    epscompress([FileName,'-uncompressed.eps'],[FileName,'.eps']);
-    delete([FileName,'-uncompressed.eps']);
+    try
+        movefile([FileName,'.eps'],[FileName,'-uncompressed.eps']);
+        epscompress([FileName,'-uncompressed.eps'],[FileName,'.eps']);
+        delete([FileName,'-uncompressed.eps']);
+    catch
+        warning(['epscompress of ',FileName,'-uncompressed.eps',' failed!'])
+    end
   end
 end
 
@@ -1017,13 +1021,16 @@ end
     '\ldots','\perp', '\surd', '\prime', '\wedge', '\varpi', '\0',...
     '\rceil', '\rangle', '\mid', '\vee', '\langle', '\copyright'};
 
-    % First escape any $ and % text characters
-    str = strrep(str,'$','\$');
+    % First escape any % text characters
     str = strrep(str,'%','\%');
     
-    % Handle superscript and subscript modifiers if the string is not
-    % already in math mode
-    if ~(startsWith(str,'\mathmodel') && endsWith(str,'\mathmoder'))
+    % If the user manually defines math mode (with two unescaped $
+    %  characters), or the string is already in math mode,
+    %  there is no need to escape anything on our end
+    if isempty(regexp(str, '(?<!\\)\$(.*?)(?<!\\)\$', 'tokens')) ...
+       && ~(startsWith(str,'\mathmodel') && endsWith(str,'\mathmoder'))
+   
+        % Handle superscript and subscript modifiers
         % Replace ^{stuff} with $^{\textnormal{stuff}}$
         str = regexprep(str,'\^\{(.*?)\}','\\mathmodel\^\{\\textnormal\{$1\}\}\\mathmoder'); 
         % Replace ^c with $^{\textnormal{c}}$
@@ -1032,11 +1039,15 @@ end
         str = regexprep(str,'_\{(.*?)\}','\\mathmodel_\{\\textnormal\{$1\}\}\\mathmoder'); 
         % Replace _c with $^{\textnormal{c}}$
         str = regexprep(str,'_([^{])','\\mathmodel_\{\\textnormal\{$1\}\}\\mathmoder'); 
-    end
-    
-    % Escape any single special characters
-    for i = 1:length(specialcharacterlist)
-        str = regexprep(str,['(\', specialcharacterlist{i},')'],'\\mathmodel$1\\mathmoder');
+        
+        % Escape any single $ characters
+        str = strrep(str,'$','\$');
+        
+        % Escape any single special characters. Negative lookahead for
+        % double backslash is needed to handle multiline mode
+        for i = 1:length(specialcharacterlist)
+            str = regexprep(str,['(?<!\\)(\', specialcharacterlist{i},')'],'\\mathmodel$1\\mathmoder');
+        end
     end
     
     % Finally replace matlabfrag placeholder commands with the LaTeX equivalent
