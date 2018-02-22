@@ -1527,7 +1527,11 @@ if ~keepticklabels
           powers(i,ixyz)=0;
   	    end  
         for k=1:nticklabels    % all ticks
-	      label = str2num(ticklabel(k,:));
+          try
+            label = str2num(ticklabel(k,:));
+          catch
+            label = str2num(ticklabel{k,:});
+          end
 	      if length(label)==0, 
 	        powers(i,ixyz) = 0;
 	        break; 
@@ -1787,8 +1791,11 @@ end
 % create eps file
 cmd = strrep(printcmd,'<filename.eps>',epsfullnameext);
 cmd = strrep(cmd,'<filename>',filename);
-cmd = strrep(cmd,'<figurenumber>',int2str(figno));
-  
+try
+    cmd = strrep(cmd,'<figurenumber>',int2str(figno));
+catch
+    cmd = strrep(cmd,'<figurenumber>',int2str(figno.Number))
+end 
 if verbose
   disp([ 'executing: '' ' cmd ' ''' ]);
 end
