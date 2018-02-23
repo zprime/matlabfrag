@@ -2,6 +2,7 @@
 close all;
 clear all;
 clc;
+addpath ./
 
 %% Compile the figures
 cd examples
@@ -50,13 +51,11 @@ zip('matlabfrag',{'matlabfrag.m',...
   ['examples',filesep,'test*.m'] });
 
 %% Clean up the output files
+close all
 cd examples
 delete(['graphics',filesep,'*']);
 rmdir('graphics');
 delete('userguide.aux');
 delete('userguide.log');
 delete('userguide.out');
-delete('userguide.pdf');
 delete('userguide.toc');
-cd ..
-delete('userguide.pdf');
