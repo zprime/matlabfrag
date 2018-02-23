@@ -581,7 +581,7 @@ end
     % Assign a replacement action for the legend strings
     CurrentReplacement={};
     for jj=1:length(handle.String)
-        CurrentReplacement{jj} = ['00000' ReplacementString()]; % Legend box needs extra padding
+        CurrentReplacement{jj} = [repmat('0',1,length(cell2mat(handle.String(jj)))) ReplacementString()]; % Legend box needs extra padding
     end
     SetUnsetProperties('Replacing text string',handle,'String',CurrentReplacement);
 
