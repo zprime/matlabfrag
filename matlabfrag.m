@@ -1123,14 +1123,63 @@ end
       counter = counter + 1;
     end
   end
+
+% 'Parse' paintersfile to find blocks of text elements
+  function blocks = TextBlocks(paintersfile)
+    lines = strsplit(paintersfile, '\n');
+
+    lookaround = 50;
+    textblocks = {};
+
+    for i = 1:length(lines)
+        line = lines{i};
+        if regexpi(line, '\(\d+\) +t')
+            if i < lookaround
+                continue
+            end
+            startline = 0;
+            endline = 0;
+
+            open = 0;
+            for j = 1:lookaround
+                if regexpi(lines{i-j}, '\s*GS\s+')
+                    open = open + 1;
+                end
+                if open == 2
+                    startline = i-j;
+                    break
+                end
+            end
+
+            close = 0;
+            for j = 1:lookaround
+                if regexpi(lines{i+j}, '\s*GR\s+')
+                    close = close + 1;
+                end
+                if close == 2
+                    endline = i+j;
+                    break
+                end
+            end
+
+            if startline > 0 && endline > 0
+                textblocks{end+1} = strjoin(lines(startline:endline), '\n'); ...
+                %#ok<AGROW>
+            end
+        end
+    end
+
+    blocks = [newline, strjoin(textblocks, '\n')];
+  end
 % Print two versions of the file, one renderered with the renderer of
 % choice, and another rendererd with painters. Then perform some epscombine
 % magic to recombine them.
   function EpsCombine(handle,renderer,filename,dpiswitch,keep_tempfile)
-    TEXTOBJ_REGEXP = ['-?\d+\s+-?\d+\s+mt(\s+-?\d+\s+rotate)?',...
-      '\s+\(.+?\)\s+s',...
-      '(\s+-?\d+\s+rotate)?'];
-    TEXTHDR_REGEXP = '%%IncludeResource:\s+font.*?\n.?\n';
+    HDR_START = '%FOPBeginFontDict';
+    HDR_END = '%FOPEndFontReencode';
+    PROLOG_STR = '%%EndProlog';
+    TRAILER_STR = '%%Trailer';
+
     if keep_tempfile
       tmp_file = [filename,'-painters'];
     else
@@ -1174,6 +1223,7 @@ end
       set(ha(jj),'yticklabel',tickvals.(hnam(jj)).ytl);
       set(ha(jj),'zticklabel',tickvals.(hnam(jj)).ztl);
     end
+
     % Now print a painters version.
     drawnow;
     print(handle,'-depsc2','-loose',dpiswitch,...
@@ -1194,15 +1244,12 @@ end
     if ~keep_tempfile
       delete([tmp_file,'.eps']);
     end
-    textobj = regexpi(paintersfile,TEXTOBJ_REGEXP,'match');
-    textobjpos = regexpi(paintersfile,TEXTOBJ_REGEXP);
-    texthdr = regexpi(paintersfile,TEXTHDR_REGEXP,'match');
-    texthdrpos = regexpi(paintersfile,TEXTHDR_REGEXP);
-    textData = cell(length(textobjpos)+length(texthdrpos),2);
-    textData(:,1) = num2cell([texthdrpos.';textobjpos.']);
-    textData(:,2) = [texthdr,textobj].';
-    [Ysort,Isort] = sortrows( cell2mat( textData(:,1) ) );
-    textData = textData(Isort,:);
+    % get header with font info
+    hdrPos1 = regexpi(paintersfile, HDR_START);
+    hdrPos2 = regexpi(paintersfile, HDR_END);
+    header = paintersfile(hdrPos1:hdrPos2+length(HDR_END));
+    % header contains trailing newline
+    textData = TextBlocks(paintersfile);
     
     % Open up the target file, and read the contents.
     try
@@ -1217,11 +1264,16 @@ end
       rethrow( err );
     end
     % Insert the new text
-    findex = regexp(epsfile,'end %%Color Dict');
-    epsfile = sprintf('%s\n\n%s\n%s',...
-      epsfile(1:findex-1),...
-      sprintf('%s\n',textData{:,2}),...
-      epsfile(findex:end));
+    header_index = regexp(epsfile,PROLOG_STR);
+    trailer_index = regexp(epsfile,TRAILER_STR);
+    % insert header just before `%%EndProlog`
+    % insert text just below `%%Trailer`
+    epsfile = sprintf('%s\n%s%s%s\n%s',...
+      epsfile(1:header_index-1),...
+      header,...
+      epsfile(header_index:trailer_index+length(TRAILER_STR)), ...
+      textData, ...
+      epsfile(trailer_index+length(TRAILER_STR)+1:end));
     try
       fh = fopen([filename,'.eps'],'w');
       fwrite(fh,epsfile);
